@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: overwatch-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-overwatch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      POSTGRES_DB: ${POSTGRES_DB:-overwatch}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-overwatch} -d ${POSTGRES_DB:-overwatch}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - overwatch-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: overwatch-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - overwatch-network
+
+  martin:
+    image: ghcr.io/maplibre/martin:v0.15.0
+    container_name: overwatch-martin
+    ports:
+      - "${MARTIN_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-overwatch}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-overwatch}
+    volumes:
+      - ./martin/config.yaml:/config.yaml:ro
+    command: --config /config.yaml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - overwatch-network
+
+  hocuspocus:
+    build:
+      context: ./server/hocuspocus
+      dockerfile: Dockerfile
+    container_name: overwatch-hocuspocus
+    ports:
+      - "${HOCUSPOCUS_PORT:-1234}:1234"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-overwatch}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-overwatch}
+      REDIS_URL: redis://redis:6379
+      HOCUSPOCUS_SECRET: ${HOCUSPOCUS_SECRET:-your-jwt-secret-change-in-production}
+      PORT: 1234
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:1234/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - overwatch-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  overwatch-network:
+    driver: bridge

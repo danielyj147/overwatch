@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MapLibre GL styles */
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+:root {
+  /* NATO APP-6 standard colors */
+  --color-friendly: #4A90D9;
+  --color-hostile: #FF6B6B;
+  --color-neutral: #4CAF50;
+  --color-unknown: #FFD54F;
+
+  /* Operational status colors */
+  --color-active: #4CAF50;
+  --color-inactive: #9E9E9E;
+  --color-alert: #FF9800;
+  --color-critical: #F44336;
+
+  /* UI colors */
+  --color-surface: #1E1E2E;
+  --color-surface-light: #2A2A3E;
+  --color-surface-dark: #15151F;
+  --color-accent: #4A90D9;
+  --color-text: #E0E0E0;
+  --color-text-muted: #9E9E9E;
+
+  /* Map UI */
+  --sidebar-width: 300px;
+  --toolbar-height: 48px;
+  --statusbar-height: 28px;
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-surface text-gray-100;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-dark;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-light rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-600;
+  }
+}
+
+@layer components {
+  /* Panel styles */
+  .panel {
+    @apply bg-surface-light border border-gray-700 rounded-lg shadow-lg;
+  }
+
+  /* Button base */
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-150;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-dark;
+  }
+
+  .btn-secondary {
+    @apply btn bg-surface-light text-gray-200 hover:bg-surface border border-gray-600;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-gray-300 hover:bg-surface-light hover:text-white;
+  }
+
+  .btn-icon {
+    @apply p-2 rounded-md transition-colors duration-150;
+    @apply hover:bg-surface-light text-gray-400 hover:text-white;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent;
+  }
+
+  /* Tool button */
+  .tool-btn {
+    @apply w-10 h-10 flex items-center justify-center rounded-lg;
+    @apply text-gray-400 hover:text-white hover:bg-surface-light;
+    @apply transition-colors duration-150;
+  }
+
+  .tool-btn.active {
+    @apply bg-accent text-white shadow-glow;
+  }
+
+  /* Status indicator */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot.connected {
+    @apply bg-green-500 animate-pulse-slow;
+  }
+
+  .status-dot.connecting {
+    @apply bg-yellow-500 animate-pulse;
+  }
+
+  .status-dot.disconnected {
+    @apply bg-red-500;
+  }
+
+  /* User cursor */
+  .user-cursor {
+    @apply absolute pointer-events-none z-50;
+    transform: translate(-2px, -2px);
+  }
+
+  .user-cursor-dot {
+    @apply w-4 h-4 rounded-full border-2 border-white;
+  }
+
+  .user-cursor-label {
+    @apply ml-3 -mt-1 px-2 py-0.5 rounded text-xs text-white whitespace-nowrap;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Map container */
+  .map-container {
+    @apply absolute inset-0;
+  }
+
+  /* Overlay positioning */
+  .overlay-top-left {
+    @apply absolute top-4 left-4;
+  }
+
+  .overlay-top-right {
+    @apply absolute top-4 right-4;
+  }
+
+  .overlay-bottom-left {
+    @apply absolute bottom-4 left-4;
+  }
+
+  .overlay-bottom-right {
+    @apply absolute bottom-4 right-4;
+  }
+}
+
+/* MapLibre GL overrides */
+.maplibregl-ctrl-group {
+  @apply bg-surface-light border-gray-700 shadow-lg !important;
+}
+
+.maplibregl-ctrl-group button {
+  @apply text-gray-300 hover:text-white hover:bg-surface !important;
+}
+
+.maplibregl-ctrl-attrib {
+  @apply bg-surface/80 text-gray-500 text-xs !important;
+}
+
+.maplibregl-popup-content {
+  @apply bg-surface-light text-gray-200 border border-gray-700 rounded-lg shadow-lg !important;
+}
+
+.maplibregl-popup-close-button {
+  @apply text-gray-400 hover:text-white !important;
+}

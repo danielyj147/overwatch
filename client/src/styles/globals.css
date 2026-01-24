@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MapLibre GL styles */
-@import 'maplibre-gl/dist/maplibre-gl.css';
-
 :root {
   /* NATO APP-6 standard colors */
   --color-friendly: #4A90D9;

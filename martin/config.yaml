@@ -36,11 +36,11 @@ postgres:
         properties: json
         style: json
 
-# Sprite configuration for map icons
-sprites:
-  sources:
-    overwatch: /sprites
-
-# Font configuration for labels
-fonts:
-  - /fonts
+# Note: Sprites and fonts are disabled by default
+# Uncomment and configure when you have sprite/font assets:
+# sprites:
+#   sources:
+#     overwatch: /sprites
+#
+# fonts:
+#   - /fonts

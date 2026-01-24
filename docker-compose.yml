@@ -1,7 +1,7 @@
 services:
   postgres:
-    image: postgis/postgis:16-3.4-alpine
-    platform: linux/arm64
+    image: postgis/postgis:16-3.4
+    platform: linux/amd64
     container_name: overwatch-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-overwatch}
@@ -38,7 +38,7 @@ services:
 
   martin:
     image: ghcr.io/maplibre/martin:v0.15.0
-    platform: linux/arm64
+    platform: linux/amd64
     container_name: overwatch-martin
     ports:
       - "${MARTIN_PORT:-3000}:3000"

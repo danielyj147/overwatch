@@ -1,5 +1,5 @@
-import { Server } from '@hocuspocus/server';
-import { createServer as createHttpServer } from 'http';
+import { Hocuspocus } from '@hocuspocus/server';
+import { createServer as createHttpServer, IncomingMessage, ServerResponse } from 'http';
 import { PostgresExtension } from './extensions/postgres.js';
 import { AuthExtension } from './extensions/auth.js';
 import { onLoadDocument } from './hooks/onLoadDocument.js';
@@ -14,9 +14,8 @@ if (!databaseUrl) {
 }
 
 // Create Hocuspocus server
-const server = Server.configure({
+const hocuspocus = new Hocuspocus({
   name: 'overwatch-collaboration',
-  port,
 
   // Debounce document updates for performance
   debounce: 2000,
@@ -54,25 +53,27 @@ const server = Server.configure({
 });
 
 // Create HTTP server for health checks
-const httpServer = createHttpServer((req, res) => {
+const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       status: 'healthy',
       service: 'hocuspocus',
-      connections: server.getConnectionsCount(),
-      documents: server.getDocumentsCount(),
+      connections: hocuspocus.getConnectionsCount(),
+      documents: hocuspocus.getDocumentsCount(),
     }));
     return;
   }
 
-  // Upgrade to WebSocket is handled by Hocuspocus
-  res.writeHead(404);
-  res.end('Not Found');
+  // Default response for non-health requests
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Overwatch Collaboration Server');
 });
 
-// Attach Hocuspocus to HTTP server
-server.listen(httpServer);
+// Handle WebSocket upgrades
+httpServer.on('upgrade', (request, socket, head) => {
+  hocuspocus.handleConnection(socket, request);
+});
 
 httpServer.listen(port, () => {
   console.log(`
@@ -88,7 +89,7 @@ httpServer.listen(port, () => {
 // Graceful shutdown
 const shutdown = async () => {
   console.log('Shutting down gracefully...');
-  await server.destroy();
+  await hocuspocus.destroy();
   httpServer.close();
   process.exit(0);
 };

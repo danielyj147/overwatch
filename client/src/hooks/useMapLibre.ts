@@ -19,12 +19,12 @@ export function useMapLibre({
   initialZoom = 12,
 }: UseMapLibreOptions) {
   const mapRef = useRef<MapLibreMap | null>(null);
-  const { setMap, setMapReady, setViewport, setCursorCoordinates } = useMapStore();
-  const { updateCursor, provider } = useCollaborationStore();
+  const initializedRef = useRef(false);
 
-  // Initialize map
+  // Initialize map only once
   useEffect(() => {
-    if (!container || mapRef.current) return;
+    if (!container || initializedRef.current) return;
+    initializedRef.current = true;
 
     const mapOptions: MapOptions = {
       container,
@@ -58,15 +58,15 @@ export function useMapLibre({
 
     // Handle map load
     map.on('load', () => {
-      setMap(map);
-      setMapReady(true);
+      useMapStore.getState().setMap(map);
+      useMapStore.getState().setMapReady(true);
       console.log('[Map] MapLibre GL loaded');
     });
 
     // Track viewport changes
     map.on('moveend', () => {
       const center = map.getCenter();
-      setViewport({
+      useMapStore.getState().setViewport({
         center: [center.lng, center.lat],
         zoom: map.getZoom(),
         bearing: map.getBearing(),
@@ -77,22 +77,20 @@ export function useMapLibre({
     // Track cursor position
     let cursorUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
     map.on('mousemove', (e) => {
-      setCursorCoordinates({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+      useMapStore.getState().setCursorCoordinates({ lng: e.lngLat.lng, lat: e.lngLat.lat });
 
       // Debounce awareness updates
       if (cursorUpdateTimeout) clearTimeout(cursorUpdateTimeout);
       cursorUpdateTimeout = setTimeout(() => {
+        const { provider } = useCollaborationStore.getState();
         if (provider) {
-          updateCursor(e.point.x, e.point.y, e.lngLat.lng, e.lngLat.lat);
+          useCollaborationStore.getState().updateCursor(e.point.x, e.point.y, e.lngLat.lng, e.lngLat.lat);
         }
       }, 50);
     });
 
     map.on('mouseout', () => {
-      setCursorCoordinates(null);
-      if (provider) {
-        updateCursor(0, 0, 0, 0);
-      }
+      useMapStore.getState().setCursorCoordinates(null);
     });
 
     // Cleanup
@@ -100,10 +98,11 @@ export function useMapLibre({
       if (cursorUpdateTimeout) clearTimeout(cursorUpdateTimeout);
       map.remove();
       mapRef.current = null;
-      setMap(null);
-      setMapReady(false);
+      initializedRef.current = false;
+      useMapStore.getState().setMap(null);
+      useMapStore.getState().setMapReady(false);
     };
-  }, [container, style, initialCenter, initialZoom, setMap, setMapReady, setViewport, setCursorCoordinates, updateCursor, provider]);
+  }, [container, style, initialCenter, initialZoom]);
 
   // Fly to location
   const flyTo = useCallback((center: [number, number], zoom?: number) => {

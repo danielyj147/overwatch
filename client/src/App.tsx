@@ -8,20 +8,21 @@ import { useCollaborationStore } from '@/stores/collaborationStore';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const { connect, disconnect, connectionStatus } = useCollaborationStore();
+  const connectionStatus = useCollaborationStore((state) => state.connectionStatus);
 
-  // Initialize collaboration connection
+  // Initialize collaboration connection (runs once on mount)
   useEffect(() => {
     // Get room name from URL or use default
     const params = new URLSearchParams(window.location.search);
     const room = params.get('room') || 'default-operation';
 
-    connect(room);
+    useCollaborationStore.getState().connect(room);
 
     return () => {
-      disconnect();
+      useCollaborationStore.getState().disconnect();
     };
-  }, [connect, disconnect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <YjsProvider>

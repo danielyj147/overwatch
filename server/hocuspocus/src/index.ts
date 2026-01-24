@@ -1,5 +1,4 @@
 import { Hocuspocus } from '@hocuspocus/server';
-import { createServer as createHttpServer, IncomingMessage, ServerResponse } from 'http';
 import { PostgresExtension } from './extensions/postgres.js';
 import { AuthExtension } from './extensions/auth.js';
 import { onLoadDocument } from './hooks/onLoadDocument.js';
@@ -15,6 +14,7 @@ if (!databaseUrl) {
 
 // Create Hocuspocus server
 const hocuspocus = new Hocuspocus({
+  port,
   name: 'overwatch-collaboration',
 
   // Debounce document updates for performance
@@ -50,32 +50,29 @@ const hocuspocus = new Hocuspocus({
   async onStoreDocument(data) {
     console.log(`[Store] Document stored: ${data.documentName}`);
   },
+
+  // Custom HTTP routes for health check
+  async onRequest(data) {
+    const { request, response } = data;
+
+    if (request.url === '/health') {
+      response.writeHead(200, { 'Content-Type': 'application/json' });
+      response.end(JSON.stringify({
+        status: 'healthy',
+        service: 'hocuspocus',
+        connections: hocuspocus.getConnectionsCount(),
+        documents: hocuspocus.getDocumentsCount(),
+      }));
+      return;
+    }
+
+    // Return false to let Hocuspocus handle the request
+    return false;
+  },
 });
 
-// Create HTTP server for health checks
-const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
-  if (req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      status: 'healthy',
-      service: 'hocuspocus',
-      connections: hocuspocus.getConnectionsCount(),
-      documents: hocuspocus.getDocumentsCount(),
-    }));
-    return;
-  }
-
-  // Default response for non-health requests
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Overwatch Collaboration Server');
-});
-
-// Handle WebSocket upgrades
-httpServer.on('upgrade', (request, socket, head) => {
-  hocuspocus.handleConnection(socket, request);
-});
-
-httpServer.listen(port, () => {
+// Start the server
+hocuspocus.listen().then(() => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║           Overwatch Collaboration Server                   ║
@@ -90,7 +87,6 @@ httpServer.listen(port, () => {
 const shutdown = async () => {
   console.log('Shutting down gracefully...');
   await hocuspocus.destroy();
-  httpServer.close();
   process.exit(0);
 };
 

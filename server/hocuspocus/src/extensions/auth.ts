@@ -23,7 +23,9 @@ export class AuthExtension implements Extension {
 
     // Development mode: allow simple token format
     // Format: "userId:userName:userColor" or full JWT
-    if (process.env.NODE_ENV !== 'production') {
+    // Default to dev mode unless explicitly set to production
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (!isProduction) {
       if (token && token.includes(':')) {
         const [userId, userName, userColor] = token.split(':');
         console.log(`[Auth] Dev mode - User authenticated: ${userName} for ${documentName}`);

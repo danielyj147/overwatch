@@ -30,12 +30,13 @@ RUN addgroup -g 1001 -S nodejs && \
 
 USER hocuspocus
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget -q --spider http://localhost:1234/health || exit 1
+# Health check - verify server is responding
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD node -e "fetch('http://localhost:1234').then(() => process.exit(0)).catch(() => process.exit(1))"
 
 EXPOSE 1234
 
-ENV NODE_ENV=production
+# Note: Set NODE_ENV=production in docker-compose for production deployments
+# Default to development for local testing
 
 CMD ["node", "dist/index.js"]

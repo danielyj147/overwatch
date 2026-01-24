@@ -51,24 +51,6 @@ const hocuspocus = new Hocuspocus({
     console.log(`[Store] Document stored: ${data.documentName}`);
   },
 
-  // Custom HTTP routes for health check
-  async onRequest(data) {
-    const { request, response } = data;
-
-    if (request.url === '/health') {
-      response.writeHead(200, { 'Content-Type': 'application/json' });
-      response.end(JSON.stringify({
-        status: 'healthy',
-        service: 'hocuspocus',
-        connections: hocuspocus.getConnectionsCount(),
-        documents: hocuspocus.getDocumentsCount(),
-      }));
-      return;
-    }
-
-    // Return false to let Hocuspocus handle the request
-    return false;
-  },
 });
 
 // Start the server

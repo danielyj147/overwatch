@@ -1,0 +1,46 @@
+# Martin Vector Tile Server Configuration
+# See: https://martin.maplibre.org/
+
+# Listen on all interfaces for Docker compatibility
+listen_addresses: '0.0.0.0:3000'
+
+# PostgreSQL connection (uses DATABASE_URL environment variable)
+postgres:
+  connection_string: ${DATABASE_URL}
+
+  # Auto-discover tables with geometry columns
+  auto_publish:
+    tables: true
+    functions: true
+
+  # Explicit table configuration
+  tables:
+    features:
+      schema: public
+      table: features
+      geometry_column: geometry
+      srid: 4326
+      geometry_type: GEOMETRY
+      id_column: id
+      minzoom: 0
+      maxzoom: 22
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      extent: 4096
+      buffer: 64
+      clip_geom: true
+      properties:
+        id: uuid
+        name: text
+        feature_type: text
+        layer_id: uuid
+        properties: json
+        style: json
+
+# Sprite configuration for map icons
+sprites:
+  sources:
+    overwatch: /sprites
+
+# Font configuration for labels
+fonts:
+  - /fonts

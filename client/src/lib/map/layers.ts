@@ -1,6 +1,6 @@
 import { IconLayer, PathLayer, PolygonLayer, ScatterplotLayer } from '@deck.gl/layers';
-import type { LayerProps } from '@deck.gl/core';
-import type { FeatureCollection, Point, LineString, Polygon } from 'geojson';
+import type { ScatterplotLayerProps, IconLayerProps, PathLayerProps, PolygonLayerProps } from '@deck.gl/layers';
+import type { Point, LineString, Polygon } from 'geojson';
 import type { OperationalFeature, Unit, LayerStyle } from '@/types/operational';
 
 /**
@@ -9,7 +9,7 @@ import type { OperationalFeature, Unit, LayerStyle } from '@/types/operational';
 export function createPointLayer(
   id: string,
   data: OperationalFeature[],
-  options: Partial<LayerProps<OperationalFeature>> = {}
+  options: Partial<ScatterplotLayerProps<OperationalFeature>> = {}
 ) {
   return new ScatterplotLayer<OperationalFeature>({
     id,
@@ -37,7 +37,7 @@ export function createPointLayer(
 export function createIconLayer(
   id: string,
   data: Unit[],
-  options: Partial<LayerProps<Unit>> = {}
+  options: Partial<IconLayerProps<Unit>> = {}
 ) {
   return new IconLayer<Unit>({
     id,
@@ -64,7 +64,7 @@ export function createIconLayer(
 export function createPathLayer(
   id: string,
   data: OperationalFeature[],
-  options: Partial<LayerProps<OperationalFeature>> = {}
+  options: Partial<PathLayerProps<OperationalFeature>> = {}
 ) {
   return new PathLayer<OperationalFeature>({
     id,
@@ -85,7 +85,7 @@ export function createPathLayer(
 export function createPolygonLayer(
   id: string,
   data: OperationalFeature[],
-  options: Partial<LayerProps<OperationalFeature>> = {}
+  options: Partial<PolygonLayerProps<OperationalFeature>> = {}
 ) {
   return new PolygonLayer<OperationalFeature>({
     id,

@@ -104,7 +104,7 @@ export const useCollaborationStore = create<CollaborationState>((set, get) => ({
           // Skip local user
           if (clientId === provider.awareness?.clientID) return;
 
-          const awarenessState = state as AwarenessState;
+          const awarenessState = state as unknown as AwarenessState;
           if (awarenessState.user) {
             remoteUsers.push({
               clientId,

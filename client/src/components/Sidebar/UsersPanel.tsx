@@ -1,8 +1,8 @@
-import { Eye, UserCircle } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { useCollaborationStore } from '@/stores/collaborationStore';
 import { useMapStore } from '@/stores/mapStore';
 import { clsx } from 'clsx';
-import type { RemoteUserState, User } from '@/types/collaboration';
+import type { User } from '@/types/collaboration';
 
 export function UsersPanel() {
   const { localUser, remoteUsers } = useCollaborationStore();

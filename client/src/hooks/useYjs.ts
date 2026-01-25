@@ -78,7 +78,7 @@ export function useYMap<T>(getName: () => Y.Map<T> | null): Map<string, T> {
  * Hook for annotations with CRUD operations
  */
 export function useAnnotations() {
-  const { ydoc, getAnnotations, localUser } = useCollaborationStore();
+  const { ydoc, getAnnotations } = useCollaborationStore();
   const annotations = useYArray<OperationalFeature>(getAnnotations);
 
   const addAnnotation = useCallback(

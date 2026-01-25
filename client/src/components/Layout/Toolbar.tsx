@@ -1,3 +1,4 @@
+import { useEffect, useCallback } from 'react';
 import {
   MousePointer2,
   Circle,
@@ -24,19 +25,48 @@ const tools: { id: DrawingTool; icon: React.ReactNode; label: string }[] = [
 
 export function Toolbar() {
   const { activeTool, setActiveTool, selection, clearSelection } = useMapStore();
-  const { setActiveTool: setAwarenessTool } = useCollaborationStore();
+  const { setActiveTool: setAwarenessTool, ydoc, getAnnotations } = useCollaborationStore();
 
   const handleToolSelect = (tool: DrawingTool) => {
     setActiveTool(tool);
     setAwarenessTool(tool === 'select' ? null : tool);
   };
 
-  const handleDelete = () => {
-    if (selection.featureId) {
-      // TODO: Delete feature from Yjs
-      clearSelection();
-    }
-  };
+  const handleDelete = useCallback(() => {
+    if (!selection.featureId || !ydoc) return;
+
+    const annotations = getAnnotations();
+    if (!annotations) return;
+
+    ydoc.transact(() => {
+      const index = annotations.toArray().findIndex(
+        (f) => f.properties?.id === selection.featureId
+      );
+      if (index !== -1) {
+        annotations.delete(index, 1);
+        console.log('[Toolbar] Deleted feature:', selection.featureId);
+      }
+    });
+
+    clearSelection();
+  }, [selection.featureId, ydoc, getAnnotations, clearSelection]);
+
+  // Keyboard shortcut for delete
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selection.featureId) {
+        // Don't delete if user is typing in an input
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+          return;
+        }
+        e.preventDefault();
+        handleDelete();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selection.featureId, handleDelete]);
 
   return (
     <header className="h-12 bg-surface border-b border-gray-700 flex items-center px-4 gap-2">

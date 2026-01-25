@@ -11,12 +11,20 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hocuspocus/server": "^2.13.0",
     "@hocuspocus/extension-database": "^2.13.0",
+    "@hocuspocus/server": "^2.13.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "pg": "^8.12.0",
     "yjs": "^13.6.18"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.14.0",
     "@types/pg": "^8.11.6",
     "tsx": "^4.15.0",

@@ -3,6 +3,7 @@ import { useMapLibre } from "@/hooks/useMapLibre";
 import { DeckOverlay } from "./DeckOverlay";
 import { CollaborativeLayer } from "./CollaborativeLayer";
 import { DrawingTools } from "./DrawingTools";
+import { SelectionTools } from "./SelectionTools";
 import { UserCursors } from "./UserCursors";
 import { useMapStore } from "@/stores/mapStore";
 
@@ -45,6 +46,9 @@ export function MapContainer() {
 
       {/* Drawing interaction layer */}
       {isMapReady && map && <DrawingTools map={map} />}
+
+      {/* Selection tools for multi-select */}
+      {isMapReady && map && <SelectionTools map={map} />}
 
       {/* Remote user cursors */}
       {isMapReady && <UserCursors />}

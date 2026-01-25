@@ -41,6 +41,9 @@ export function DrawingTools({ map }: DrawingToolsProps) {
         const { localUser } = useCollaborationStore.getState();
         return localUser?.id || 'anonymous';
       },
+      getActiveLayerId: () => {
+        return useCollaborationStore.getState().activeLayerId;
+      },
     });
 
     return () => {

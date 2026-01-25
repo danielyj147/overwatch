@@ -19,6 +19,7 @@ export interface DrawingManagerOptions {
   onFeatureCreated: (feature: OperationalFeature) => void;
   onDrawingStateChange: (state: DrawingState) => void;
   getUserId: () => string;
+  getActiveLayerId: () => string | null;
 }
 
 export class DrawingManager {
@@ -26,6 +27,7 @@ export class DrawingManager {
   private onFeatureCreated: (feature: OperationalFeature) => void;
   private onDrawingStateChange: (state: DrawingState) => void;
   private getUserId: () => string;
+  private getActiveLayerId: () => string | null;
 
   private currentTool: DrawingTool = 'select';
   private style: DrawingStyle = {
@@ -50,6 +52,7 @@ export class DrawingManager {
     this.onFeatureCreated = options.onFeatureCreated;
     this.onDrawingStateChange = options.onDrawingStateChange;
     this.getUserId = options.getUserId;
+    this.getActiveLayerId = options.getActiveLayerId;
 
     // Set up escape key handler
     this.keyHandler = (e: KeyboardEvent) => {
@@ -153,6 +156,12 @@ export class DrawingManager {
 
   private setupPointDrawing() {
     this.clickHandler = (e: MapMouseEvent) => {
+      const layerId = this.getActiveLayerId();
+      if (!layerId) {
+        console.warn('[Drawing] No active layer selected');
+        return;
+      }
+
       const coords: Position = [e.lngLat.lng, e.lngLat.lat];
       const feature = createPointFeature(
         coords,
@@ -161,7 +170,8 @@ export class DrawingManager {
           strokeColor: this.style.color,
           strokeWidth: this.style.strokeWidth,
         },
-        this.getUserId()
+        this.getUserId(),
+        layerId
       );
       this.onFeatureCreated(feature);
     };
@@ -183,6 +193,12 @@ export class DrawingManager {
 
     this.dblClickHandler = (e: MapMouseEvent) => {
       e.preventDefault();
+      const layerId = this.getActiveLayerId();
+      if (!layerId) {
+        console.warn('[Drawing] No active layer selected');
+        return;
+      }
+
       if (this.vertices.length >= 2) {
         const feature = createLineFeature(
           this.vertices,
@@ -190,7 +206,8 @@ export class DrawingManager {
             strokeColor: this.style.color,
             strokeWidth: this.style.strokeWidth,
           },
-          this.getUserId()
+          this.getUserId(),
+          layerId
         );
         this.onFeatureCreated(feature);
         this.resetDrawing();
@@ -215,6 +232,12 @@ export class DrawingManager {
 
     this.dblClickHandler = (e: MapMouseEvent) => {
       e.preventDefault();
+      const layerId = this.getActiveLayerId();
+      if (!layerId) {
+        console.warn('[Drawing] No active layer selected');
+        return;
+      }
+
       if (this.vertices.length >= 3) {
         const feature = createPolygonFeature(
           this.vertices,
@@ -225,6 +248,7 @@ export class DrawingManager {
             strokeWidth: this.style.strokeWidth,
           },
           this.getUserId(),
+          layerId,
           'polygon'
         );
         this.onFeatureCreated(feature);
@@ -245,6 +269,12 @@ export class DrawingManager {
         this.state = 'drawing';
         this.onDrawingStateChange('drawing');
       } else {
+        const layerId = this.getActiveLayerId();
+        if (!layerId) {
+          console.warn('[Drawing] No active layer selected');
+          return;
+        }
+
         const rectangleCoords = createRectangleCoordinates(this.startPoint, coords);
         const feature = createPolygonFeature(
           rectangleCoords,
@@ -255,6 +285,7 @@ export class DrawingManager {
             strokeWidth: this.style.strokeWidth,
           },
           this.getUserId(),
+          layerId,
           'rectangle'
         );
         this.onFeatureCreated(feature);
@@ -274,6 +305,12 @@ export class DrawingManager {
         this.state = 'drawing';
         this.onDrawingStateChange('drawing');
       } else {
+        const layerId = this.getActiveLayerId();
+        if (!layerId) {
+          console.warn('[Drawing] No active layer selected');
+          return;
+        }
+
         const radius = calculateDistance(this.startPoint, coords);
         const circleCoords = createCircleCoordinates(this.startPoint, radius);
         const feature = createPolygonFeature(
@@ -285,6 +322,7 @@ export class DrawingManager {
             strokeWidth: this.style.strokeWidth,
           },
           this.getUserId(),
+          layerId,
           'circle'
         );
         this.onFeatureCreated(feature);

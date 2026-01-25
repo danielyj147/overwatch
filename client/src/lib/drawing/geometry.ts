@@ -15,6 +15,7 @@ export function createPointFeature(
   coordinates: Position,
   style: FeatureProperties['style'],
   userId: string,
+  layerId: string,
   name?: string
 ): OperationalFeature {
   const now = Date.now();
@@ -30,7 +31,7 @@ export function createPointFeature(
       id,
       name: name || `Point ${id.substring(0, 8)}`,
       featureType: 'point',
-      layerId: 'b2c3d4e5-f6a7-5b6c-9d0e-1f2a3b4c5d6e', // Annotations layer
+      layerId,
       style,
       createdBy: userId,
       createdAt: now,
@@ -46,6 +47,7 @@ export function createLineFeature(
   coordinates: Position[],
   style: FeatureProperties['style'],
   userId: string,
+  layerId: string,
   name?: string
 ): OperationalFeature {
   const now = Date.now();
@@ -61,7 +63,7 @@ export function createLineFeature(
       id,
       name: name || `Line ${id.substring(0, 8)}`,
       featureType: 'line',
-      layerId: 'b2c3d4e5-f6a7-5b6c-9d0e-1f2a3b4c5d6e',
+      layerId,
       style,
       createdBy: userId,
       createdAt: now,
@@ -77,6 +79,7 @@ export function createPolygonFeature(
   coordinates: Position[],
   style: FeatureProperties['style'],
   userId: string,
+  layerId: string,
   featureType: FeatureType = 'polygon',
   name?: string
 ): OperationalFeature {
@@ -103,7 +106,7 @@ export function createPolygonFeature(
       id,
       name: name || `${featureType.charAt(0).toUpperCase() + featureType.slice(1)} ${id.substring(0, 8)}`,
       featureType,
-      layerId: 'b2c3d4e5-f6a7-5b6c-9d0e-1f2a3b4c5d6e',
+      layerId,
       style,
       createdBy: userId,
       createdAt: now,

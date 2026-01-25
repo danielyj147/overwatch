@@ -9,9 +9,11 @@ import {
   Undo2,
   Redo2,
   Trash2,
+  LogOut,
 } from 'lucide-react';
 import { useMapStore, type DrawingTool } from '@/stores/mapStore';
 import { useCollaborationStore } from '@/stores/collaborationStore';
+import { useAuthStore } from '@/stores/authStore';
 import { clsx } from 'clsx';
 
 const tools: { id: DrawingTool; icon: React.ReactNode; label: string }[] = [
@@ -25,40 +27,84 @@ const tools: { id: DrawingTool; icon: React.ReactNode; label: string }[] = [
 
 export function Toolbar() {
   const { activeTool, setActiveTool, selection, clearSelection } = useMapStore();
-  const { setActiveTool: setAwarenessTool, ydoc, getAnnotations } = useCollaborationStore();
+  const {
+    setActiveTool: setAwarenessTool,
+    ydoc,
+    getAnnotations,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    roomName,
+  } = useCollaborationStore();
+  const { user, logout } = useAuthStore();
 
   const handleToolSelect = (tool: DrawingTool) => {
     setActiveTool(tool);
     setAwarenessTool(tool === 'select' ? null : tool);
   };
 
+  const handleUndo = useCallback(() => {
+    undo();
+  }, [undo]);
+
+  const handleRedo = useCallback(() => {
+    redo();
+  }, [redo]);
+
   const handleDelete = useCallback(() => {
-    if (!selection.featureId || !ydoc) return;
+    if (selection.featureIds.length === 0 || !ydoc) return;
 
     const annotations = getAnnotations();
     if (!annotations) return;
 
     ydoc.transact(() => {
-      const index = annotations.toArray().findIndex(
-        (f) => f.properties?.id === selection.featureId
-      );
-      if (index !== -1) {
-        annotations.delete(index, 1);
-        console.log('[Toolbar] Deleted feature:', selection.featureId);
+      // Delete in reverse order to avoid index shifting issues
+      const arr = annotations.toArray();
+      const indicesToDelete: number[] = [];
+
+      for (let i = 0; i < arr.length; i++) {
+        if (selection.featureIds.includes(arr[i].properties?.id || '')) {
+          indicesToDelete.push(i);
+        }
       }
+
+      // Sort in descending order and delete
+      indicesToDelete.sort((a, b) => b - a);
+      for (const index of indicesToDelete) {
+        annotations.delete(index, 1);
+      }
+
+      console.log('[Toolbar] Deleted features:', selection.featureIds);
     });
 
     clearSelection();
-  }, [selection.featureId, ydoc, getAnnotations, clearSelection]);
+  }, [selection.featureIds, ydoc, getAnnotations, clearSelection]);
 
-  // Keyboard shortcut for delete
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selection.featureId) {
-        // Don't delete if user is typing in an input
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-          return;
-        }
+      // Don't handle if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Undo: Ctrl+Z / Cmd+Z
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+
+      // Redo: Ctrl+Shift+Z / Cmd+Shift+Z or Ctrl+Y / Cmd+Y
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+
+      // Delete: Delete or Backspace
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selection.featureIds.length > 0) {
         e.preventDefault();
         handleDelete();
       }
@@ -66,7 +112,7 @@ export function Toolbar() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selection.featureId, handleDelete]);
+  }, [selection.featureIds, handleDelete, handleUndo, handleRedo]);
 
   return (
     <header className="h-12 bg-surface border-b border-gray-700 flex items-center px-4 gap-2">
@@ -97,17 +143,27 @@ export function Toolbar() {
 
       {/* Edit actions */}
       <div className="flex items-center gap-1 px-2">
-        <button className="tool-btn" title="Undo" disabled>
+        <button
+          className={clsx('tool-btn', !canUndo && 'opacity-50 cursor-not-allowed')}
+          title="Undo (Ctrl+Z)"
+          onClick={handleUndo}
+          disabled={!canUndo}
+        >
           <Undo2 size={18} />
         </button>
-        <button className="tool-btn" title="Redo" disabled>
+        <button
+          className={clsx('tool-btn', !canRedo && 'opacity-50 cursor-not-allowed')}
+          title="Redo (Ctrl+Shift+Z)"
+          onClick={handleRedo}
+          disabled={!canRedo}
+        >
           <Redo2 size={18} />
         </button>
         <button
-          className={clsx('tool-btn', !selection.featureId && 'opacity-50 cursor-not-allowed')}
-          title="Delete selected"
+          className={clsx('tool-btn', selection.featureIds.length === 0 && 'opacity-50 cursor-not-allowed')}
+          title={`Delete selected (Del)${selection.featureIds.length > 1 ? ` - ${selection.featureIds.length} items` : ''}`}
           onClick={handleDelete}
-          disabled={!selection.featureId}
+          disabled={selection.featureIds.length === 0}
         >
           <Trash2 size={18} />
         </button>
@@ -117,9 +173,31 @@ export function Toolbar() {
       <div className="flex-1" />
 
       {/* Room name */}
-      <div className="text-sm text-gray-400">
-        Room: <span className="text-white">default-operation</span>
+      <div className="text-sm text-gray-400 pr-4 border-r border-gray-700">
+        Room: <span className="text-white">{roomName || 'default-operation'}</span>
       </div>
+
+      {/* User info and logout */}
+      {user && (
+        <div className="flex items-center gap-3 pl-4">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white"
+              style={{ backgroundColor: user.color }}
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-sm text-white">{user.name}</span>
+          </div>
+          <button
+            onClick={logout}
+            className="tool-btn text-gray-400 hover:text-red-400"
+            title="Logout"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+      )}
     </header>
   );
 }

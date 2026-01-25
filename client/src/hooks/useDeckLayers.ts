@@ -1,15 +1,19 @@
 import { useMemo, useCallback, useState, useEffect } from 'react';
 import { PathLayer, PolygonLayer, ScatterplotLayer } from '@deck.gl/layers';
-import type { PickingInfo, Layer } from '@deck.gl/core';
+import type { PickingInfo, Layer as DeckLayer } from '@deck.gl/core';
 import type { Point, LineString, Polygon } from 'geojson';
 import { useCollaborationStore } from '@/stores/collaborationStore';
 import { useMapStore } from '@/stores/mapStore';
-import type { OperationalFeature } from '@/types/operational';
+import type { OperationalFeature, Layer } from '@/types/operational';
 
 export function useDeckLayers() {
-  const { getAnnotations, ydoc } = useCollaborationStore();
-  const { layerVisibility, selection, setSelection, drawingPreview, drawingStyle } = useMapStore();
+  const { getAnnotations, getLayers, ydoc } = useCollaborationStore();
+  const { selection, toggleSelection, drawingPreview, drawingStyle, selectionBox } = useMapStore();
   const [annotationsData, setAnnotationsData] = useState<OperationalFeature[]>([]);
+  const [layersData, setLayersData] = useState<Layer[]>([]);
+
+  // Create a Set for fast selection lookup
+  const selectedIds = useMemo(() => new Set(selection.featureIds), [selection.featureIds]);
 
   // Subscribe to Yjs annotations changes
   useEffect(() => {
@@ -33,9 +37,73 @@ export function useDeckLayers() {
     };
   }, [ydoc, getAnnotations]);
 
+  // Subscribe to Yjs layers changes
+  useEffect(() => {
+    if (!ydoc) return;
+
+    const layers = getLayers();
+    if (!layers) return;
+
+    // Initial load
+    setLayersData(layers.toArray());
+
+    // Subscribe to changes
+    const observer = () => {
+      setLayersData(layers.toArray());
+    };
+
+    layers.observe(observer);
+
+    return () => {
+      layers.unobserve(observer);
+    };
+  }, [ydoc, getLayers]);
+
+  // Create a map of layer visibility
+  const layerVisibilityMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    layersData.forEach((layer) => {
+      map.set(layer.id, layer.visible);
+    });
+    return map;
+  }, [layersData]);
+
+  // Filter annotations by visible layers
+  const visibleAnnotations = useMemo(() => {
+    return annotationsData.filter((feature) => {
+      const layerId = feature.properties?.layerId;
+      if (!layerId) return true; // Show features without layerId
+      return layerVisibilityMap.get(layerId) !== false;
+    });
+  }, [annotationsData, layerVisibilityMap]);
+
   // Create layers based on visible data
   const layers = useMemo(() => {
-    const activeLayers: Layer[] = [];
+    const activeLayers: DeckLayer[] = [];
+
+    // Selection box layer (drag-to-select rectangle)
+    if (selectionBox) {
+      const boxCoords: [number, number][] = [
+        [selectionBox.startLng, selectionBox.startLat],
+        [selectionBox.endLng, selectionBox.startLat],
+        [selectionBox.endLng, selectionBox.endLat],
+        [selectionBox.startLng, selectionBox.endLat],
+        [selectionBox.startLng, selectionBox.startLat],
+      ];
+      activeLayers.push(
+        new PolygonLayer({
+          id: 'selection-box',
+          data: [{ polygon: boxCoords }],
+          getPolygon: (d: { polygon: [number, number][] }) => d.polygon,
+          getFillColor: [59, 130, 246, 30], // Blue with low opacity
+          getLineColor: [59, 130, 246, 200], // Blue border
+          getLineWidth: 1,
+          lineWidthMinPixels: 1,
+          stroked: true,
+          filled: true,
+        })
+      );
+    }
 
     // Drawing preview layer (in-progress drawing)
     if (drawingPreview && drawingPreview.coordinates.length > 0) {
@@ -105,116 +173,125 @@ export function useDeckLayers() {
       }
     }
 
-    // Annotations layer (user-drawn features)
-    if (layerVisibility['b2c3d4e5-f6a7-5b6c-9d0e-1f2a3b4c5d6e'] !== false) {
-      // Points layer for point annotations
-      const pointFeatures = annotationsData.filter(
-        (f) => f.geometry.type === 'Point'
+    // Points layer for point annotations
+    const pointFeatures = visibleAnnotations.filter(
+      (f) => f.geometry.type === 'Point'
+    );
+    if (pointFeatures.length > 0) {
+      activeLayers.push(
+        new ScatterplotLayer({
+          id: 'annotations-points',
+          data: pointFeatures,
+          pickable: true,
+          stroked: true,
+          filled: true,
+          getPosition: (d: OperationalFeature) => {
+            const coords = (d.geometry as Point).coordinates;
+            return [coords[0], coords[1]];
+          },
+          getRadius: 8,
+          getFillColor: (d: OperationalFeature) => {
+            const color = d.properties?.style?.fillColor || '#FFD700';
+            return hexToRgba(color, 200);
+          },
+          getLineColor: (d: OperationalFeature) => {
+            const isSelected = selectedIds.has(d.properties?.id || '');
+            return isSelected ? [59, 130, 246, 255] : [255, 255, 255, 180];
+          },
+          getLineWidth: (d: OperationalFeature) => {
+            const isSelected = selectedIds.has(d.properties?.id || '');
+            return isSelected ? 3 : 2;
+          },
+          radiusMinPixels: 6,
+          radiusMaxPixels: 20,
+          updateTriggers: {
+            getLineColor: [selectedIds],
+            getLineWidth: [selectedIds],
+          },
+        })
       );
-      if (pointFeatures.length > 0) {
-        activeLayers.push(
-          new ScatterplotLayer({
-            id: 'annotations-points',
-            data: pointFeatures,
-            pickable: true,
-            stroked: true,
-            filled: true,
-            getPosition: (d: OperationalFeature) => {
-              const coords = (d.geometry as Point).coordinates;
-              return [coords[0], coords[1]];
-            },
-            getRadius: 8,
-            getFillColor: (d: OperationalFeature) => {
-              const color = d.properties?.style?.fillColor || '#FFD700';
-              return hexToRgba(color, 200);
-            },
-            getLineColor: (d: OperationalFeature) => {
-              const isSelected = selection.featureId === d.properties?.id;
-              return isSelected ? [255, 255, 255, 255] : [255, 255, 255, 180];
-            },
-            getLineWidth: (d: OperationalFeature) => {
-              const isSelected = selection.featureId === d.properties?.id;
-              return isSelected ? 3 : 2;
-            },
-            radiusMinPixels: 6,
-            radiusMaxPixels: 20,
-          })
-        );
-      }
+    }
 
-      // Lines layer for line annotations
-      const lineFeatures = annotationsData.filter(
-        (f) => f.geometry.type === 'LineString'
+    // Lines layer for line annotations
+    const lineFeatures = visibleAnnotations.filter(
+      (f) => f.geometry.type === 'LineString'
+    );
+    if (lineFeatures.length > 0) {
+      activeLayers.push(
+        new PathLayer({
+          id: 'annotations-lines',
+          data: lineFeatures,
+          pickable: true,
+          widthScale: 1,
+          widthMinPixels: 2,
+          getPath: (d: OperationalFeature) => (d.geometry as LineString).coordinates as [number, number][],
+          getColor: (d: OperationalFeature) => {
+            const isSelected = selectedIds.has(d.properties?.id || '');
+            if (isSelected) return [59, 130, 246, 255]; // Blue for selected
+            const color = d.properties?.style?.strokeColor || '#FFD700';
+            return hexToRgba(color, 255);
+          },
+          getWidth: (d: OperationalFeature) => {
+            const isSelected = selectedIds.has(d.properties?.id || '');
+            return isSelected ? 4 : d.properties?.style?.strokeWidth || 2;
+          },
+          updateTriggers: {
+            getColor: [selectedIds],
+            getWidth: [selectedIds],
+          },
+        })
       );
-      if (lineFeatures.length > 0) {
-        activeLayers.push(
-          new PathLayer({
-            id: 'annotations-lines',
-            data: lineFeatures,
-            pickable: true,
-            widthScale: 1,
-            widthMinPixels: 2,
-            getPath: (d: OperationalFeature) => (d.geometry as LineString).coordinates as [number, number][],
-            getColor: (d: OperationalFeature) => {
-              const color = d.properties?.style?.strokeColor || '#FFD700';
-              return hexToRgba(color, 255);
-            },
-            getWidth: (d: OperationalFeature) => {
-              const isSelected = selection.featureId === d.properties?.id;
-              return isSelected ? 4 : d.properties?.style?.strokeWidth || 2;
-            },
-          })
-        );
-      }
+    }
 
-      // Polygons layer for polygon annotations
-      const polygonFeatures = annotationsData.filter(
-        (f) => f.geometry.type === 'Polygon'
+    // Polygons layer for polygon annotations
+    const polygonFeatures = visibleAnnotations.filter(
+      (f) => f.geometry.type === 'Polygon'
+    );
+    if (polygonFeatures.length > 0) {
+      activeLayers.push(
+        new PolygonLayer({
+          id: 'annotations-polygons',
+          data: polygonFeatures,
+          pickable: true,
+          stroked: true,
+          filled: true,
+          extruded: false,
+          getPolygon: (d: OperationalFeature) => (d.geometry as Polygon).coordinates[0] as [number, number][],
+          getFillColor: (d: OperationalFeature) => {
+            const color = d.properties?.style?.fillColor || '#FFD700';
+            const opacity = d.properties?.style?.fillOpacity ?? 0.2;
+            return hexToRgba(color, Math.floor(opacity * 255));
+          },
+          getLineColor: (d: OperationalFeature) => {
+            const isSelected = selectedIds.has(d.properties?.id || '');
+            if (isSelected) return [59, 130, 246, 255]; // Blue for selected
+            const color = d.properties?.style?.strokeColor || '#FFD700';
+            return hexToRgba(color, 255);
+          },
+          getLineWidth: (d: OperationalFeature) => {
+            const isSelected = selectedIds.has(d.properties?.id || '');
+            return isSelected ? 3 : d.properties?.style?.strokeWidth || 2;
+          },
+          lineWidthMinPixels: 1,
+          updateTriggers: {
+            getLineColor: [selectedIds],
+            getLineWidth: [selectedIds],
+          },
+        })
       );
-      if (polygonFeatures.length > 0) {
-        activeLayers.push(
-          new PolygonLayer({
-            id: 'annotations-polygons',
-            data: polygonFeatures,
-            pickable: true,
-            stroked: true,
-            filled: true,
-            extruded: false,
-            getPolygon: (d: OperationalFeature) => (d.geometry as Polygon).coordinates[0] as [number, number][],
-            getFillColor: (d: OperationalFeature) => {
-              const color = d.properties?.style?.fillColor || '#FFD700';
-              const opacity = d.properties?.style?.fillOpacity ?? 0.2;
-              return hexToRgba(color, Math.floor(opacity * 255));
-            },
-            getLineColor: (d: OperationalFeature) => {
-              const color = d.properties?.style?.strokeColor || '#FFD700';
-              const isSelected = selection.featureId === d.properties?.id;
-              return isSelected ? [255, 255, 255, 255] : hexToRgba(color, 255);
-            },
-            getLineWidth: (d: OperationalFeature) => {
-              const isSelected = selection.featureId === d.properties?.id;
-              return isSelected ? 3 : d.properties?.style?.strokeWidth || 2;
-            },
-            lineWidthMinPixels: 1,
-          })
-        );
-      }
     }
 
     return activeLayers;
-  }, [annotationsData, layerVisibility, selection.featureId, drawingPreview, drawingStyle]);
+  }, [visibleAnnotations, selectedIds, drawingPreview, drawingStyle, selectionBox]);
 
   // Handle click on features
-  const handleClick = useCallback((info: PickingInfo) => {
+  const handleClick = useCallback((info: PickingInfo, event: { srcEvent: MouseEvent }) => {
     const feature = info.object as OperationalFeature | undefined;
     if (feature?.properties?.id) {
-      setSelection({
-        featureId: feature.properties.id,
-        featureType: 'annotation',
-        isEditing: false,
-      });
+      const isShiftClick = event.srcEvent.shiftKey;
+      toggleSelection(feature.properties.id, isShiftClick);
     }
-  }, [setSelection]);
+  }, [toggleSelection]);
 
   // Handle hover on features
   const handleHover = useCallback((_info: PickingInfo) => {

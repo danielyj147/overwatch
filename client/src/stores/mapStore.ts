@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { ViewportState, Layer } from '@/types/operational';
-import type { SelectionState } from '@/types/collaboration';
+import type { SelectionState, SelectionBox } from '@/types/collaboration';
 
 /**
  * Drawing tool types
@@ -48,6 +48,9 @@ interface MapState {
     coordinates: [number, number][];
   } | null;
 
+  // Selection box for drag-to-select
+  selectionBox: SelectionBox | null;
+
   // Actions
   setMap: (map: MapLibreMap | null) => void;
   setMapReady: (ready: boolean) => void;
@@ -56,7 +59,11 @@ interface MapState {
   setDrawingStyle: (style: Partial<DrawingStyle>) => void;
   setIsDrawing: (isDrawing: boolean) => void;
   setSelection: (selection: Partial<SelectionState>) => void;
+  addToSelection: (featureId: string) => void;
+  removeFromSelection: (featureId: string) => void;
+  toggleSelection: (featureId: string, multiSelect?: boolean) => void;
   clearSelection: () => void;
+  setSelectionBox: (box: SelectionBox | null) => void;
   setLayers: (layers: Layer[]) => void;
   toggleLayerVisibility: (layerId: string) => void;
   setCursorCoordinates: (coords: { lng: number; lat: number } | null) => void;
@@ -88,7 +95,7 @@ export const useMapStore = create<MapState>((set, get) => ({
   drawingStyle: DEFAULT_DRAWING_STYLE,
   isDrawing: false,
   selection: {
-    featureId: null,
+    featureIds: [],
     featureType: null,
     isEditing: false,
   },
@@ -96,6 +103,7 @@ export const useMapStore = create<MapState>((set, get) => ({
   layerVisibility: {},
   cursorCoordinates: null,
   drawingPreview: null,
+  selectionBox: null,
 
   // Actions
   setMap: (map) => set({ map }),
@@ -127,14 +135,58 @@ export const useMapStore = create<MapState>((set, get) => ({
       selection: { ...state.selection, ...selection },
     })),
 
+  addToSelection: (featureId) =>
+    set((state) => ({
+      selection: {
+        ...state.selection,
+        featureIds: state.selection.featureIds.includes(featureId)
+          ? state.selection.featureIds
+          : [...state.selection.featureIds, featureId],
+      },
+    })),
+
+  removeFromSelection: (featureId) =>
+    set((state) => ({
+      selection: {
+        ...state.selection,
+        featureIds: state.selection.featureIds.filter((id) => id !== featureId),
+      },
+    })),
+
+  toggleSelection: (featureId, multiSelect = false) =>
+    set((state) => {
+      const isSelected = state.selection.featureIds.includes(featureId);
+      if (multiSelect) {
+        // Multi-select mode: toggle the item in the selection
+        return {
+          selection: {
+            ...state.selection,
+            featureIds: isSelected
+              ? state.selection.featureIds.filter((id) => id !== featureId)
+              : [...state.selection.featureIds, featureId],
+          },
+        };
+      } else {
+        // Single select mode: replace selection
+        return {
+          selection: {
+            ...state.selection,
+            featureIds: isSelected ? [] : [featureId],
+          },
+        };
+      }
+    }),
+
   clearSelection: () =>
     set({
       selection: {
-        featureId: null,
+        featureIds: [],
         featureType: null,
         isEditing: false,
       },
     }),
+
+  setSelectionBox: (box) => set({ selectionBox: box }),
 
   setLayers: (layers) => {
     const visibility: Record<string, boolean> = {};

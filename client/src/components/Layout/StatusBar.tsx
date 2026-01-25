@@ -8,7 +8,7 @@ interface StatusBarProps {
 }
 
 export function StatusBar({ connectionStatus }: StatusBarProps) {
-  const { cursorCoordinates, viewport } = useMapStore();
+  const { cursorCoordinates, viewport, selection } = useMapStore();
   const { remoteUsers } = useCollaborationStore();
 
   const formatCoordinate = (value: number, isLat: boolean): string => {
@@ -66,9 +66,16 @@ export function StatusBar({ connectionStatus }: StatusBarProps) {
       </div>
 
       {/* Zoom level */}
-      <div className="flex items-center gap-2 px-4">
+      <div className="flex items-center gap-2 px-4 border-r border-gray-700">
         <span>Zoom: {viewport.zoom.toFixed(1)}</span>
       </div>
+
+      {/* Selection count */}
+      {selection.featureIds.length > 0 && (
+        <div className="flex items-center gap-2 px-4 text-accent">
+          <span>{selection.featureIds.length} selected</span>
+        </div>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />

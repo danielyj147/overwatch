@@ -24,9 +24,14 @@ export function DeckOverlay({ map }: DeckOverlayProps) {
     const overlay = new MapboxOverlay({
       interleaved: true,
       layers: [],
-      onClick: (info) => {
+      onClick: (info, event) => {
+        // Prevent default behavior (like zoom) when shift is held
+        if (event.srcEvent?.shiftKey) {
+          event.srcEvent.preventDefault();
+          event.srcEvent.stopPropagation();
+        }
         if (info.picked) {
-          handleClickRef.current(info);
+          handleClickRef.current(info, event);
         }
       },
       onHover: (info) => {

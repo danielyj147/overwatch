@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Hocuspocus } from '@hocuspocus/server';
 import express from 'express';
 import cors from 'cors';

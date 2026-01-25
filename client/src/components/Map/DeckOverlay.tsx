@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { useDeckLayers } from '@/hooks/useDeckLayers';
@@ -11,7 +11,13 @@ export function DeckOverlay({ map }: DeckOverlayProps) {
   const overlayRef = useRef<MapboxOverlay | null>(null);
   const { layers, handleClick, handleHover } = useDeckLayers();
 
-  // Initialize Deck.gl overlay
+  // Store callbacks in refs to avoid re-creating overlay
+  const handleClickRef = useRef(handleClick);
+  const handleHoverRef = useRef(handleHover);
+  handleClickRef.current = handleClick;
+  handleHoverRef.current = handleHover;
+
+  // Initialize Deck.gl overlay once
   useEffect(() => {
     if (!map || overlayRef.current) return;
 
@@ -20,11 +26,11 @@ export function DeckOverlay({ map }: DeckOverlayProps) {
       layers: [],
       onClick: (info) => {
         if (info.picked) {
-          handleClick(info);
+          handleClickRef.current(info);
         }
       },
       onHover: (info) => {
-        handleHover(info);
+        handleHoverRef.current(info);
         // Change cursor on hover
         map.getCanvas().style.cursor = info.picked ? 'pointer' : '';
       },
@@ -41,7 +47,7 @@ export function DeckOverlay({ map }: DeckOverlayProps) {
         overlayRef.current = null;
       }
     };
-  }, [map, handleClick, handleHover]);
+  }, [map]);
 
   // Update layers when they change
   useEffect(() => {

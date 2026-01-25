@@ -74,19 +74,29 @@ export function useMapLibre({
       });
     });
 
-    // Track cursor position
-    let cursorUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
-    map.on('mousemove', (e) => {
-      useMapStore.getState().setCursorCoordinates({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+    // Track cursor position with throttling for performance
+    let lastCursorUpdate = 0;
+    let lastAwarenessUpdate = 0;
+    const CURSOR_THROTTLE = 16; // ~60fps for local cursor display
+    const AWARENESS_THROTTLE = 100; // 10fps for network awareness updates
 
-      // Debounce awareness updates
-      if (cursorUpdateTimeout) clearTimeout(cursorUpdateTimeout);
-      cursorUpdateTimeout = setTimeout(() => {
+    map.on('mousemove', (e) => {
+      const now = performance.now();
+
+      // Throttle cursor coordinate updates (for status bar display)
+      if (now - lastCursorUpdate > CURSOR_THROTTLE) {
+        lastCursorUpdate = now;
+        useMapStore.getState().setCursorCoordinates({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+      }
+
+      // Throttle awareness updates more aggressively (network sync)
+      if (now - lastAwarenessUpdate > AWARENESS_THROTTLE) {
+        lastAwarenessUpdate = now;
         const { provider } = useCollaborationStore.getState();
         if (provider) {
           useCollaborationStore.getState().updateCursor(e.point.x, e.point.y, e.lngLat.lng, e.lngLat.lat);
         }
-      }, 50);
+      }
     });
 
     map.on('mouseout', () => {
@@ -95,7 +105,6 @@ export function useMapLibre({
 
     // Cleanup
     return () => {
-      if (cursorUpdateTimeout) clearTimeout(cursorUpdateTimeout);
       map.remove();
       mapRef.current = null;
       initializedRef.current = false;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { DrawingManager, type DrawingState } from '@/lib/drawing/DrawingManager';
 import { useMapStore } from '@/stores/mapStore';
@@ -11,54 +11,43 @@ interface DrawingToolsProps {
 
 export function DrawingTools({ map }: DrawingToolsProps) {
   const drawingManagerRef = useRef<DrawingManager | null>(null);
-  const { activeTool, drawingStyle, setIsDrawing } = useMapStore();
-  const { getAnnotations, localUser, ydoc } = useCollaborationStore();
 
-  // Handle feature creation - add to Yjs
-  const handleFeatureCreated = useCallback(
-    (feature: OperationalFeature) => {
-      if (!ydoc) return;
+  // Use selectors for only the values we need
+  const activeTool = useMapStore((state) => state.activeTool);
+  const drawingStyle = useMapStore((state) => state.drawingStyle);
 
-      const annotations = getAnnotations();
-      if (annotations) {
-        ydoc.transact(() => {
-          annotations.push([feature]);
-        });
-        console.log('[Drawing] Feature created and synced:', feature.properties?.id);
-      }
-    },
-    [ydoc, getAnnotations]
-  );
-
-  // Handle drawing state changes
-  const handleDrawingStateChange = useCallback(
-    (state: DrawingState) => {
-      setIsDrawing(state === 'drawing');
-    },
-    [setIsDrawing]
-  );
-
-  // Get current user ID
-  const getUserId = useCallback(() => {
-    return localUser?.id || 'anonymous';
-  }, [localUser]);
-
-  // Initialize drawing manager
+  // Initialize drawing manager once
   useEffect(() => {
-    if (!map) return;
+    if (!map || drawingManagerRef.current) return;
 
     drawingManagerRef.current = new DrawingManager({
       map,
-      onFeatureCreated: handleFeatureCreated,
-      onDrawingStateChange: handleDrawingStateChange,
-      getUserId,
+      onFeatureCreated: (feature: OperationalFeature) => {
+        const { ydoc, getAnnotations } = useCollaborationStore.getState();
+        if (!ydoc) return;
+
+        const annotations = getAnnotations();
+        if (annotations) {
+          ydoc.transact(() => {
+            annotations.push([feature]);
+          });
+          console.log('[Drawing] Feature created and synced:', feature.properties?.id);
+        }
+      },
+      onDrawingStateChange: (state: DrawingState) => {
+        useMapStore.getState().setIsDrawing(state === 'drawing');
+      },
+      getUserId: () => {
+        const { localUser } = useCollaborationStore.getState();
+        return localUser?.id || 'anonymous';
+      },
     });
 
     return () => {
       drawingManagerRef.current?.destroy();
       drawingManagerRef.current = null;
     };
-  }, [map, handleFeatureCreated, handleDrawingStateChange, getUserId]);
+  }, [map]);
 
   // Update tool when it changes
   useEffect(() => {

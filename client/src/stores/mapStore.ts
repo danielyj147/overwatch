@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Map as MapLibreMap } from 'maplibre-gl';
-import type { ViewportState, FeatureType, Layer } from '@/types/operational';
+import type { ViewportState, Layer } from '@/types/operational';
 import type { SelectionState } from '@/types/collaboration';
 
 /**
@@ -42,6 +42,12 @@ interface MapState {
   // Coordinates display
   cursorCoordinates: { lng: number; lat: number } | null;
 
+  // Drawing preview (in-progress shape before completion)
+  drawingPreview: {
+    type: 'line' | 'polygon' | 'rectangle' | 'circle' | null;
+    coordinates: [number, number][];
+  } | null;
+
   // Actions
   setMap: (map: MapLibreMap | null) => void;
   setMapReady: (ready: boolean) => void;
@@ -55,6 +61,7 @@ interface MapState {
   toggleLayerVisibility: (layerId: string) => void;
   setCursorCoordinates: (coords: { lng: number; lat: number } | null) => void;
   setFollowingUser: (userId: string | null) => void;
+  setDrawingPreview: (preview: MapState['drawingPreview']) => void;
 }
 
 const DEFAULT_VIEWPORT: ViewportState = {
@@ -88,6 +95,7 @@ export const useMapStore = create<MapState>((set, get) => ({
   layers: [],
   layerVisibility: {},
   cursorCoordinates: null,
+  drawingPreview: null,
 
   // Actions
   setMap: (map) => set({ map }),
@@ -147,4 +155,6 @@ export const useMapStore = create<MapState>((set, get) => ({
   setCursorCoordinates: (coords) => set({ cursorCoordinates: coords }),
 
   setFollowingUser: (userId) => set({ isFollowingUser: userId }),
+
+  setDrawingPreview: (preview) => set({ drawingPreview: preview }),
 }));

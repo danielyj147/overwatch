@@ -1,10 +1,8 @@
 import { useCollaborationStore } from '@/stores/collaborationStore';
-import { useMapStore } from '@/stores/mapStore';
 import type { RemoteUserState } from '@/types/collaboration';
 
 export function UserCursors() {
   const { remoteUsers } = useCollaborationStore();
-  const { map } = useMapStore();
 
   // Filter users with valid cursor positions
   const usersWithCursors = remoteUsers.filter(

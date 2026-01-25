@@ -1,6 +1,7 @@
 import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
 import type { Position } from 'geojson';
 import type { DrawingTool, DrawingStyle } from '@/stores/mapStore';
+import { useMapStore } from '@/stores/mapStore';
 import type { OperationalFeature } from '@/types/operational';
 import {
   createPointFeature,
@@ -37,16 +38,26 @@ export class DrawingManager {
   private state: DrawingState = 'idle';
   private vertices: Position[] = [];
   private startPoint: Position | null = null;
+  private currentMousePos: Position | null = null;
 
   private clickHandler: ((e: MapMouseEvent) => void) | null = null;
   private moveHandler: ((e: MapMouseEvent) => void) | null = null;
   private dblClickHandler: ((e: MapMouseEvent) => void) | null = null;
+  private keyHandler: ((e: KeyboardEvent) => void) | null = null;
 
   constructor(options: DrawingManagerOptions) {
     this.map = options.map;
     this.onFeatureCreated = options.onFeatureCreated;
     this.onDrawingStateChange = options.onDrawingStateChange;
     this.getUserId = options.getUserId;
+
+    // Set up escape key handler
+    this.keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && this.state === 'drawing') {
+        this.cancelDrawing();
+      }
+    };
+    document.addEventListener('keydown', this.keyHandler);
   }
 
   setTool(tool: DrawingTool) {
@@ -64,11 +75,63 @@ export class DrawingManager {
     this.style = { ...this.style, ...style };
   }
 
+  private updatePreview() {
+    const setDrawingPreview = useMapStore.getState().setDrawingPreview;
+
+    if (this.state !== 'drawing' || !this.currentMousePos) {
+      setDrawingPreview(null);
+      return;
+    }
+
+    switch (this.currentTool) {
+      case 'line': {
+        if (this.vertices.length > 0) {
+          const coords = [...this.vertices, this.currentMousePos] as [number, number][];
+          setDrawingPreview({ type: 'line', coordinates: coords });
+        }
+        break;
+      }
+      case 'polygon': {
+        if (this.vertices.length > 0) {
+          // Close the polygon by adding first point at the end
+          const coords = [...this.vertices, this.currentMousePos] as [number, number][];
+          if (coords.length >= 2) {
+            coords.push(coords[0]);
+          }
+          setDrawingPreview({ type: 'polygon', coordinates: coords });
+        }
+        break;
+      }
+      case 'rectangle': {
+        if (this.startPoint) {
+          const coords = createRectangleCoordinates(this.startPoint, this.currentMousePos);
+          setDrawingPreview({ type: 'rectangle', coordinates: coords as [number, number][] });
+        }
+        break;
+      }
+      case 'circle': {
+        if (this.startPoint) {
+          const radius = calculateDistance(this.startPoint, this.currentMousePos);
+          const coords = createCircleCoordinates(this.startPoint, radius);
+          setDrawingPreview({ type: 'circle', coordinates: coords as [number, number][] });
+        }
+        break;
+      }
+    }
+  }
+
   private attachEventListeners() {
-    // Remove existing listeners
     this.removeEventListeners();
 
-    // Set up new listeners based on tool
+    // Common mousemove handler for preview
+    this.moveHandler = (e: MapMouseEvent) => {
+      this.currentMousePos = [e.lngLat.lng, e.lngLat.lat];
+      if (this.state === 'drawing') {
+        this.updatePreview();
+      }
+    };
+    this.map.on('mousemove', this.moveHandler);
+
     switch (this.currentTool) {
       case 'point':
         this.setupPointDrawing();
@@ -115,6 +178,7 @@ export class DrawingManager {
         this.state = 'drawing';
         this.onDrawingStateChange('drawing');
       }
+      this.updatePreview();
     };
 
     this.dblClickHandler = (e: MapMouseEvent) => {
@@ -146,6 +210,7 @@ export class DrawingManager {
         this.state = 'drawing';
         this.onDrawingStateChange('drawing');
       }
+      this.updatePreview();
     };
 
     this.dblClickHandler = (e: MapMouseEvent) => {
@@ -230,11 +295,17 @@ export class DrawingManager {
     this.map.on('click', this.clickHandler);
   }
 
+  private cancelDrawing() {
+    this.resetDrawing();
+  }
+
   private resetDrawing() {
     this.vertices = [];
     this.startPoint = null;
+    this.currentMousePos = null;
     this.state = 'idle';
     this.onDrawingStateChange('idle');
+    useMapStore.getState().setDrawingPreview(null);
   }
 
   private removeEventListeners() {
@@ -259,5 +330,9 @@ export class DrawingManager {
 
   destroy() {
     this.cleanup();
+    if (this.keyHandler) {
+      document.removeEventListener('keydown', this.keyHandler);
+      this.keyHandler = null;
+    }
   }
 }

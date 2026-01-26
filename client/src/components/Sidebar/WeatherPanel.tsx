@@ -1,4 +1,4 @@
-import { Radar, AlertTriangle, RefreshCw, ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { Radar, AlertTriangle, RefreshCw, ChevronDown, ChevronRight, Clock, Sparkles, Wind } from 'lucide-react';
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { useWeatherStore } from '@/stores/weatherStore';
@@ -35,6 +35,13 @@ export function WeatherPanel() {
     radarOpacity,
     radarTimeOffset,
     radarTimeOptions,
+    lightPollutionEnabled,
+    lightPollutionOpacity,
+    windEnabled,
+    windOpacity,
+    windForecastHour,
+    windTimeOptions,
+    isLoadingWind,
     alertsEnabled,
     alerts,
     isLoadingAlerts,
@@ -43,12 +50,21 @@ export function WeatherPanel() {
     setRadarEnabled,
     setRadarOpacity,
     setRadarTimeOffset,
+    commitRadarTime,
     refreshRadarTimeOptions,
+    setLightPollutionEnabled,
+    setLightPollutionOpacity,
+    setWindEnabled,
+    setWindOpacity,
+    setWindForecastHour,
+    commitWindTime,
     setAlertsEnabled,
     fetchAlerts,
   } = useWeatherStore();
 
   const [isRadarExpanded, setIsRadarExpanded] = useState(true);
+  const [isWindExpanded, setIsWindExpanded] = useState(true);
+  const [isLightPollutionExpanded, setIsLightPollutionExpanded] = useState(true);
   const [isAlertsExpanded, setIsAlertsExpanded] = useState(true);
 
   // Count alerts by severity
@@ -151,6 +167,8 @@ export function WeatherPanel() {
                     value={radarTimeOffset}
                     onChange={(e) => setRadarTimeOffset(Number(e.target.value))}
                     onMouseDown={() => refreshRadarTimeOptions()}
+                    onMouseUp={() => commitRadarTime()}
+                    onTouchEnd={() => commitRadarTime()}
                     className="w-full h-1 rounded-full appearance-none cursor-pointer"
                     style={{
                       background: `linear-gradient(to right, var(--color-border) ${((radarTimeOffset + 120) / 120) * 100}%, var(--color-accent) ${((radarTimeOffset + 120) / 120) * 100}%)`,
@@ -167,6 +185,193 @@ export function WeatherPanel() {
             <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
               NEXRAD precipitation radar from IEM.{' '}
               {radarTimeOffset === 0 ? 'Auto-refreshes every 5 minutes.' : 'Showing historical data.'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Wind Section */}
+      <div
+        className="rounded-lg overflow-hidden"
+        style={{ backgroundColor: 'var(--color-surface-light)' }}
+      >
+        <button
+          onClick={() => setIsWindExpanded(!isWindExpanded)}
+          className="w-full flex items-center justify-between p-3 hover:bg-opacity-80 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            {isWindExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            <Wind size={16} />
+            <span className="text-sm font-medium">Wind</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {isLoadingWind && (
+              <RefreshCw size={12} className="animate-spin" style={{ color: 'var(--color-text-muted)' }} />
+            )}
+            <div
+              className={clsx(
+                'w-2 h-2 rounded-full',
+                windEnabled ? 'bg-green-500' : 'bg-gray-500'
+              )}
+            />
+          </div>
+        </button>
+
+        {isWindExpanded && (
+          <div className="px-3 pb-3 space-y-3">
+            {/* Wind Toggle */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                Show Wind
+              </span>
+              <ToggleSwitch enabled={windEnabled} onChange={() => setWindEnabled(!windEnabled)} />
+            </div>
+
+            {/* Wind controls when enabled */}
+            {windEnabled && (
+              <>
+                {/* Opacity Slider */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      Opacity
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      {Math.round(windOpacity * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={windOpacity * 100}
+                    onChange={(e) => setWindOpacity(Number(e.target.value) / 100)}
+                    className="w-full h-1 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, var(--color-accent) ${windOpacity * 100}%, var(--color-border) ${windOpacity * 100}%)`,
+                    }}
+                  />
+                </div>
+
+                {/* Forecast Time Slider */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <Clock size={12} style={{ color: 'var(--color-text-muted)' }} />
+                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                        Forecast
+                      </span>
+                    </div>
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                      {windTimeOptions.find((o) => o.time.getTime() === new Date().setHours(new Date().getHours() + windForecastHour, 0, 0, 0))?.label || `+${windForecastHour}h`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={48}
+                    step={3}
+                    value={windForecastHour}
+                    onChange={(e) => setWindForecastHour(Number(e.target.value))}
+                    onMouseUp={() => commitWindTime()}
+                    onTouchEnd={() => commitWindTime()}
+                    className="w-full h-1 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, var(--color-accent) ${(windForecastHour / 48) * 100}%, var(--color-border) ${(windForecastHour / 48) * 100}%)`,
+                    }}
+                  />
+                  <div className="flex justify-between text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                    <span>Now</span>
+                    <span>+48h</span>
+                  </div>
+                </div>
+
+                {/* Wind Speed Legend */}
+                <div className="pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                  <p className="text-xs font-medium mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                    Wind Speed (m/s)
+                  </p>
+                  <div
+                    className="h-2 rounded-full"
+                    style={{
+                      background: 'linear-gradient(to right, #6271B7, #3961A0, #4A94AA, #4DA791, #55A764, #7EAF4B, #B8B73F, #E3B038, #F18A36, #EA5D3B, #D53847, #B73779)',
+                    }}
+                  />
+                  <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                    <span>0</span>
+                    <span>15</span>
+                    <span>30+</span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              Animated wind particles showing direction and speed. Data from Open-Meteo.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Light Pollution Section */}
+      <div
+        className="rounded-lg overflow-hidden"
+        style={{ backgroundColor: 'var(--color-surface-light)' }}
+      >
+        <button
+          onClick={() => setIsLightPollutionExpanded(!isLightPollutionExpanded)}
+          className="w-full flex items-center justify-between p-3 hover:bg-opacity-80 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            {isLightPollutionExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            <Sparkles size={16} />
+            <span className="text-sm font-medium">Light Pollution</span>
+          </div>
+          <div
+            className={clsx(
+              'w-2 h-2 rounded-full',
+              lightPollutionEnabled ? 'bg-green-500' : 'bg-gray-500'
+            )}
+          />
+        </button>
+
+        {isLightPollutionExpanded && (
+          <div className="px-3 pb-3 space-y-3">
+            {/* Light Pollution Toggle */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                Show Light Pollution
+              </span>
+              <ToggleSwitch enabled={lightPollutionEnabled} onChange={() => setLightPollutionEnabled(!lightPollutionEnabled)} />
+            </div>
+
+            {/* Opacity Slider */}
+            {lightPollutionEnabled && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                    Opacity
+                  </span>
+                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                    {Math.round(lightPollutionOpacity * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={lightPollutionOpacity * 100}
+                  onChange={(e) => setLightPollutionOpacity(Number(e.target.value) / 100)}
+                  className="w-full h-1 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, var(--color-accent) ${lightPollutionOpacity * 100}%, var(--color-border) ${lightPollutionOpacity * 100}%)`,
+                  }}
+                />
+              </div>
+            )}
+
+            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              VIIRS satellite imagery showing artificial light at night.
             </p>
           </div>
         )}

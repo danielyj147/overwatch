@@ -9,10 +9,21 @@ const RADAR_WMS_URL_LIVE = 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad
 const RADAR_WMS_URL_HISTORICAL = 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r-t.cgi';
 
 /**
+ * Light pollution tiles from VIIRS Earth at Night
+ */
+const LIGHT_POLLUTION_TILES = 'https://map1.vis.earthdata.nasa.gov/wmts-webmerc/VIIRS_CityLights_2012/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg';
+
+/**
  * Radar source and layer IDs
  */
 export const RADAR_SOURCE_ID = 'nexrad-radar';
 export const RADAR_LAYER_ID = 'nexrad-radar-layer';
+
+/**
+ * Light pollution source and layer IDs
+ */
+export const LIGHT_POLLUTION_SOURCE_ID = 'light-pollution';
+export const LIGHT_POLLUTION_LAYER_ID = 'light-pollution-layer';
 
 /**
  * Generate a MapLibre style specification for use with Martin tiles
@@ -256,4 +267,74 @@ export function refreshRadarTiles(map: MapLibreMap, timeOffsetMinutes: number = 
  */
 export function setRadarTime(map: MapLibreMap, timeOffsetMinutes: number): void {
   refreshRadarTiles(map, timeOffsetMinutes);
+}
+
+/**
+ * Add light pollution layer to the map
+ */
+export function addLightPollutionLayer(map: MapLibreMap, visible: boolean = false): void {
+  if (!map.isStyleLoaded()) {
+    map.once('style.load', () => addLightPollutionLayer(map, visible));
+    return;
+  }
+
+  if (map.getSource(LIGHT_POLLUTION_SOURCE_ID)) {
+    return;
+  }
+
+  try {
+    map.addSource(LIGHT_POLLUTION_SOURCE_ID, {
+      type: 'raster',
+      tiles: [LIGHT_POLLUTION_TILES],
+      tileSize: 256,
+      maxzoom: 8,
+      attribution: '&copy; <a href="https://earthdata.nasa.gov/">NASA VIIRS</a>',
+    });
+
+    const beforeLayerId = getFirstLabelLayerId(map);
+
+    map.addLayer(
+      {
+        id: LIGHT_POLLUTION_LAYER_ID,
+        type: 'raster',
+        source: LIGHT_POLLUTION_SOURCE_ID,
+        paint: {
+          'raster-opacity': 0.5,
+          'raster-opacity-transition': { duration: 300 },
+        },
+        layout: {
+          visibility: visible ? 'visible' : 'none',
+        },
+      },
+      beforeLayerId
+    );
+  } catch (error) {
+    console.error('[Map] Failed to add light pollution layer:', error);
+  }
+}
+
+/**
+ * Set light pollution layer visibility
+ */
+export function setLightPollutionVisibility(map: MapLibreMap, visible: boolean): void {
+  if (!map.isStyleLoaded()) {
+    map.once('style.load', () => setLightPollutionVisibility(map, visible));
+    return;
+  }
+
+  if (!map.getLayer(LIGHT_POLLUTION_LAYER_ID)) {
+    addLightPollutionLayer(map, visible);
+    return;
+  }
+
+  map.setLayoutProperty(LIGHT_POLLUTION_LAYER_ID, 'visibility', visible ? 'visible' : 'none');
+}
+
+/**
+ * Set light pollution layer opacity
+ */
+export function setLightPollutionOpacity(map: MapLibreMap, opacity: number): void {
+  if (!map.getLayer(LIGHT_POLLUTION_LAYER_ID)) return;
+
+  map.setPaintProperty(LIGHT_POLLUTION_LAYER_ID, 'raster-opacity', Math.max(0, Math.min(1, opacity)));
 }

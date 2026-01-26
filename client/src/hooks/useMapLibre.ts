@@ -3,7 +3,15 @@ import maplibregl, { Map as MapLibreMap, MapOptions } from 'maplibre-gl';
 import { useMapStore } from '@/stores/mapStore';
 import { useCollaborationStore } from '@/stores/collaborationStore';
 import { useWeatherStore } from '@/stores/weatherStore';
-import { addRadarLayer, setRadarVisibility, setRadarOpacity, refreshRadarTiles, setRadarTime } from '@/lib/map/styles';
+import {
+  addRadarLayer,
+  setRadarVisibility,
+  setRadarOpacity,
+  setRadarTime,
+  addLightPollutionLayer,
+  setLightPollutionVisibility,
+  setLightPollutionOpacity,
+} from '@/lib/map/styles';
 
 interface UseMapLibreOptions {
   container: HTMLElement | null;
@@ -63,11 +71,15 @@ export function useMapLibre({
       useMapStore.getState().setMap(map);
       useMapStore.getState().setMapReady(true);
 
-      // Initialize radar layer (hidden by default)
+      // Initialize overlay layers (hidden by default)
       const weatherState = useWeatherStore.getState();
       addRadarLayer(map, weatherState.radarEnabled);
+      addLightPollutionLayer(map, weatherState.lightPollutionEnabled);
       if (weatherState.radarEnabled) {
         setRadarOpacity(map, weatherState.radarOpacity);
+      }
+      if (weatherState.lightPollutionEnabled) {
+        setLightPollutionOpacity(map, weatherState.lightPollutionOpacity);
       }
 
       console.log('[Map] MapLibre GL loaded');
@@ -113,7 +125,7 @@ export function useMapLibre({
       useMapStore.getState().setCursorCoordinates(null);
     });
 
-    // Subscribe to weather store for radar changes (visibility and opacity only)
+    // Subscribe to weather store for overlay changes
     const unsubscribeWeather = useWeatherStore.subscribe((state, prevState) => {
       if (!mapRef.current) return;
 
@@ -126,13 +138,23 @@ export function useMapLibre({
       if (state.radarOpacity !== prevState.radarOpacity && state.radarEnabled) {
         setRadarOpacity(mapRef.current, state.radarOpacity);
       }
+
+      // Handle light pollution visibility change
+      if (state.lightPollutionEnabled !== prevState.lightPollutionEnabled) {
+        setLightPollutionVisibility(mapRef.current, state.lightPollutionEnabled);
+      }
+
+      // Handle light pollution opacity change
+      if (state.lightPollutionOpacity !== prevState.lightPollutionOpacity && state.lightPollutionEnabled) {
+        setLightPollutionOpacity(mapRef.current, state.lightPollutionOpacity);
+      }
     });
 
-    // Handle radar refresh events
+    // Handle radar refresh events (for auto-refresh)
     const handleRadarRefresh = () => {
       if (mapRef.current && useWeatherStore.getState().radarEnabled) {
         const { radarTimeOffset } = useWeatherStore.getState();
-        refreshRadarTiles(mapRef.current, radarTimeOffset);
+        setRadarTime(mapRef.current, radarTimeOffset);
       }
     };
     window.addEventListener('radar-refresh', handleRadarRefresh);

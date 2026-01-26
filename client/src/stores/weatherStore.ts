@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { WeatherAlert } from '@/types/weather';
 import { fetchActiveAlerts } from '@/lib/weather/api';
+import type { WindData, WindForecastTime } from '@/lib/weather/wind';
+import { generateWindTimeOptions } from '@/lib/weather/wind';
 
 // Generate time options for the past 2 hours in 5-minute intervals
 function generateRadarTimeOptions(): { value: number; label: string }[] {
@@ -21,10 +23,6 @@ function generateRadarTimeOptions(): { value: number; label: string }[] {
   return options;
 }
 
-// Debounce timer for radar refresh
-let radarRefreshTimer: ReturnType<typeof setTimeout> | null = null;
-const RADAR_DEBOUNCE_MS = 100; // Refresh after 100ms of no slider movement
-let radarRequestId = 0; // Track latest request to avoid race conditions
 
 interface WeatherState {
   // Radar state
@@ -32,6 +30,19 @@ interface WeatherState {
   radarOpacity: number;
   radarTimeOffset: number; // Minutes offset from current time (0 = live, -5 = 5 min ago, etc.)
   radarTimeOptions: { value: number; label: string }[];
+
+  // Light pollution state
+  lightPollutionEnabled: boolean;
+  lightPollutionOpacity: number;
+
+  // Wind state
+  windEnabled: boolean;
+  windOpacity: number;
+  windForecastHour: number;
+  windTimeOptions: WindForecastTime[];
+  windData: WindData | null;
+  isLoadingWind: boolean;
+  windError: string | null;
 
   // Alerts state
   alertsEnabled: boolean;
@@ -48,7 +59,15 @@ interface WeatherState {
   setRadarEnabled: (enabled: boolean) => void;
   setRadarOpacity: (opacity: number) => void;
   setRadarTimeOffset: (offset: number) => void;
+  commitRadarTime: () => void;
   refreshRadarTimeOptions: () => void;
+  setLightPollutionEnabled: (enabled: boolean) => void;
+  setLightPollutionOpacity: (opacity: number) => void;
+  setWindEnabled: (enabled: boolean) => void;
+  setWindOpacity: (opacity: number) => void;
+  setWindForecastHour: (hour: number) => void;
+  commitWindTime: () => void;
+  fetchWindData: (bounds: { west: number; south: number; east: number; north: number }) => Promise<void>;
   setAlertsEnabled: (enabled: boolean) => void;
   fetchAlerts: () => Promise<void>;
   startAutoRefresh: () => void;
@@ -64,6 +83,15 @@ export const useWeatherStore = create<WeatherState>((set, get) => ({
   radarOpacity: 0.7,
   radarTimeOffset: 0, // Live
   radarTimeOptions: generateRadarTimeOptions(),
+  lightPollutionEnabled: false,
+  lightPollutionOpacity: 0.5,
+  windEnabled: false,
+  windOpacity: 0.8,
+  windForecastHour: 0,
+  windTimeOptions: generateWindTimeOptions(),
+  windData: null,
+  isLoadingWind: false,
+  windError: null,
   alertsEnabled: false,
   alerts: [],
   isLoadingAlerts: false,
@@ -86,27 +114,62 @@ export const useWeatherStore = create<WeatherState>((set, get) => ({
   },
 
   setRadarTimeOffset: (offset) => {
-    // Update state immediately for responsive UI
+    // Update state immediately for responsive UI (no tile fetch)
     set({ radarTimeOffset: offset });
+  },
 
-    // Increment request ID to track latest request
-    const currentRequestId = ++radarRequestId;
-
-    // Debounce the actual tile refresh
-    if (radarRefreshTimer) {
-      clearTimeout(radarRefreshTimer);
-    }
-    radarRefreshTimer = setTimeout(() => {
-      // Only dispatch if this is still the latest request
-      if (currentRequestId === radarRequestId) {
-        window.dispatchEvent(new CustomEvent('radar-time-change', { detail: { offset, requestId: currentRequestId } }));
-      }
-      radarRefreshTimer = null;
-    }, RADAR_DEBOUNCE_MS);
+  commitRadarTime: () => {
+    // Called when user releases slider - actually fetch tiles
+    const { radarTimeOffset } = get();
+    window.dispatchEvent(new CustomEvent('radar-time-change', { detail: { offset: radarTimeOffset } }));
   },
 
   refreshRadarTimeOptions: () => {
     set({ radarTimeOptions: generateRadarTimeOptions() });
+  },
+
+  setLightPollutionEnabled: (enabled) => {
+    set({ lightPollutionEnabled: enabled });
+  },
+
+  setLightPollutionOpacity: (opacity) => {
+    set({ lightPollutionOpacity: Math.max(0, Math.min(1, opacity)) });
+  },
+
+  setWindEnabled: (enabled) => {
+    set({ windEnabled: enabled });
+    if (!enabled) {
+      set({ windData: null });
+    }
+  },
+
+  setWindOpacity: (opacity) => {
+    set({ windOpacity: Math.max(0, Math.min(1, opacity)) });
+  },
+
+  setWindForecastHour: (hour) => {
+    set({ windForecastHour: hour });
+  },
+
+  commitWindTime: () => {
+    // Trigger wind data refetch with new time
+    window.dispatchEvent(new CustomEvent('wind-time-change'));
+  },
+
+  fetchWindData: async (bounds) => {
+    set({ isLoadingWind: true, windError: null });
+
+    try {
+      // Dynamic import to avoid circular dependencies
+      const { fetchWindData: fetchWind } = await import('@/lib/weather/wind');
+      const { windForecastHour } = get();
+      const data = await fetchWind(bounds, windForecastHour);
+      set({ windData: data, isLoadingWind: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch wind data';
+      set({ windError: message, isLoadingWind: false });
+      console.error('[Weather] Failed to fetch wind data:', message);
+    }
   },
 
   setAlertsEnabled: (enabled) => {

@@ -2,6 +2,8 @@ import { useEffect, useRef, useCallback } from 'react';
 import maplibregl, { Map as MapLibreMap, MapOptions } from 'maplibre-gl';
 import { useMapStore } from '@/stores/mapStore';
 import { useCollaborationStore } from '@/stores/collaborationStore';
+import { useWeatherStore } from '@/stores/weatherStore';
+import { addRadarLayer, setRadarVisibility, setRadarOpacity, refreshRadarTiles, setRadarTime } from '@/lib/map/styles';
 
 interface UseMapLibreOptions {
   container: HTMLElement | null;
@@ -60,6 +62,14 @@ export function useMapLibre({
     map.on('load', () => {
       useMapStore.getState().setMap(map);
       useMapStore.getState().setMapReady(true);
+
+      // Initialize radar layer (hidden by default)
+      const weatherState = useWeatherStore.getState();
+      addRadarLayer(map, weatherState.radarEnabled);
+      if (weatherState.radarEnabled) {
+        setRadarOpacity(map, weatherState.radarOpacity);
+      }
+
       console.log('[Map] MapLibre GL loaded');
     });
 
@@ -103,8 +113,44 @@ export function useMapLibre({
       useMapStore.getState().setCursorCoordinates(null);
     });
 
+    // Subscribe to weather store for radar changes (visibility and opacity only)
+    const unsubscribeWeather = useWeatherStore.subscribe((state, prevState) => {
+      if (!mapRef.current) return;
+
+      // Handle radar visibility change
+      if (state.radarEnabled !== prevState.radarEnabled) {
+        setRadarVisibility(mapRef.current, state.radarEnabled);
+      }
+
+      // Handle radar opacity change
+      if (state.radarOpacity !== prevState.radarOpacity && state.radarEnabled) {
+        setRadarOpacity(mapRef.current, state.radarOpacity);
+      }
+    });
+
+    // Handle radar refresh events
+    const handleRadarRefresh = () => {
+      if (mapRef.current && useWeatherStore.getState().radarEnabled) {
+        const { radarTimeOffset } = useWeatherStore.getState();
+        refreshRadarTiles(mapRef.current, radarTimeOffset);
+      }
+    };
+    window.addEventListener('radar-refresh', handleRadarRefresh);
+
+    // Handle radar time change events (debounced from store)
+    const handleRadarTimeChange = (e: Event) => {
+      if (mapRef.current && useWeatherStore.getState().radarEnabled) {
+        const offset = (e as CustomEvent<{ offset: number }>).detail?.offset ?? useWeatherStore.getState().radarTimeOffset;
+        setRadarTime(mapRef.current, offset);
+      }
+    };
+    window.addEventListener('radar-time-change', handleRadarTimeChange);
+
     // Cleanup
     return () => {
+      unsubscribeWeather();
+      window.removeEventListener('radar-refresh', handleRadarRefresh);
+      window.removeEventListener('radar-time-change', handleRadarTimeChange);
       map.remove();
       mapRef.current = null;
       initializedRef.current = false;

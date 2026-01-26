@@ -1,7 +1,8 @@
-import { ChevronLeft, ChevronRight, Layers, Users, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers, Users, Settings, Cloud } from 'lucide-react';
 import { useState } from 'react';
 import { LayerPanel } from '@/components/Sidebar/LayerPanel';
 import { UsersPanel } from '@/components/Sidebar/UsersPanel';
+import { WeatherPanel } from '@/components/Sidebar/WeatherPanel';
 import { ThemeSelector } from '@/components/Settings/ThemeSelector';
 import { clsx } from 'clsx';
 
@@ -10,7 +11,7 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-type Tab = 'layers' | 'users' | 'settings';
+type Tab = 'layers' | 'users' | 'weather' | 'settings';
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<Tab>('layers');
@@ -49,44 +50,62 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <button
               onClick={() => setActiveTab('layers')}
               className={clsx(
-                'flex-1 flex items-center justify-center gap-2 px-3 py-3 text-sm font-medium transition-colors',
+                'flex-1 flex items-center justify-center gap-1 px-2 py-3 text-xs font-medium transition-colors',
               )}
               style={{
                 color: activeTab === 'layers' ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
                 backgroundColor: activeTab === 'layers' ? 'var(--color-surface-light)' : 'transparent',
                 borderBottom: activeTab === 'layers' ? '2px solid var(--color-accent)' : '2px solid transparent',
               }}
+              title="Layers"
             >
-              <Layers size={16} />
-              Layers
+              <Layers size={14} />
+              <span className="hidden sm:inline">Layers</span>
             </button>
             <button
               onClick={() => setActiveTab('users')}
               className={clsx(
-                'flex-1 flex items-center justify-center gap-2 px-3 py-3 text-sm font-medium transition-colors',
+                'flex-1 flex items-center justify-center gap-1 px-2 py-3 text-xs font-medium transition-colors',
               )}
               style={{
                 color: activeTab === 'users' ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
                 backgroundColor: activeTab === 'users' ? 'var(--color-surface-light)' : 'transparent',
                 borderBottom: activeTab === 'users' ? '2px solid var(--color-accent)' : '2px solid transparent',
               }}
+              title="Users"
             >
-              <Users size={16} />
-              Users
+              <Users size={14} />
+              <span className="hidden sm:inline">Users</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('weather')}
+              className={clsx(
+                'flex-1 flex items-center justify-center gap-1 px-2 py-3 text-xs font-medium transition-colors',
+              )}
+              style={{
+                color: activeTab === 'weather' ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                backgroundColor: activeTab === 'weather' ? 'var(--color-surface-light)' : 'transparent',
+                borderBottom: activeTab === 'weather' ? '2px solid var(--color-accent)' : '2px solid transparent',
+              }}
+              title="Weather"
+            >
+              <Cloud size={14} />
+              <span className="hidden sm:inline">Weather</span>
             </button>
             <button
               onClick={() => setActiveTab('settings')}
               className={clsx(
-                'flex-1 flex items-center justify-center gap-2 px-3 py-3 text-sm font-medium transition-colors',
+                'flex-1 flex items-center justify-center gap-1 px-2 py-3 text-xs font-medium transition-colors',
               )}
               style={{
                 color: activeTab === 'settings' ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
                 backgroundColor: activeTab === 'settings' ? 'var(--color-surface-light)' : 'transparent',
                 borderBottom: activeTab === 'settings' ? '2px solid var(--color-accent)' : '2px solid transparent',
               }}
+              title="Settings"
             >
-              <Settings size={16} />
-              Settings
+              <Settings size={14} />
+              <span className="hidden sm:inline">Settings</span>
             </button>
           </div>
 
@@ -94,6 +113,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           <div className="flex-1 overflow-y-auto">
             {activeTab === 'layers' && <LayerPanel />}
             {activeTab === 'users' && <UsersPanel />}
+            {activeTab === 'weather' && <WeatherPanel />}
             {activeTab === 'settings' && (
               <div className="p-4">
                 <ThemeSelector />

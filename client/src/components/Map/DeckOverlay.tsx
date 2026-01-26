@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { useDeckLayers } from '@/hooks/useDeckLayers';
+import { useWeatherLayers } from '@/hooks/useWeatherLayers';
 
 interface DeckOverlayProps {
   map: MapLibreMap;
@@ -9,7 +10,14 @@ interface DeckOverlayProps {
 
 export function DeckOverlay({ map }: DeckOverlayProps) {
   const overlayRef = useRef<MapboxOverlay | null>(null);
-  const { layers, handleClick, handleHover } = useDeckLayers();
+  const { layers: annotationLayers, handleClick, handleHover } = useDeckLayers();
+  const { layers: weatherLayers } = useWeatherLayers();
+
+  // Combine layers: weather layers render below annotation layers
+  const layers = useMemo(
+    () => [...weatherLayers, ...annotationLayers],
+    [weatherLayers, annotationLayers]
+  );
 
   // Store callbacks in refs to avoid re-creating overlay
   const handleClickRef = useRef(handleClick);

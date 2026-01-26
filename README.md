@@ -2,7 +2,8 @@
 
 A real-time collaborative Common Operational Picture (COP) platform. Think of it as "Google Docs for maps" — when one operative draws, marks, or annotates the map, every connected user sees the change instantly.
 
-![Overwatch Screenshot](./assets/static/overwatch.png)
+![Overwatch Screenshot 1](./assets/static/overwatch1.png)
+![Overwatch Screenshot 2](./assets/static/overwatch2.png)
 
 ## Features
 

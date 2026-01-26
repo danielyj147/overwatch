@@ -48,10 +48,16 @@ function App() {
   // Show loading state while verifying token
   if (isInitializing) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-surface">
+      <div
+        className="h-screen w-screen flex items-center justify-center"
+        style={{ backgroundColor: 'var(--color-background)' }}
+      >
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-          <span className="text-gray-400">Loading...</span>
+          <div
+            className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
+          />
+          <span style={{ color: 'var(--color-text-muted)' }}>Loading...</span>
         </div>
       </div>
     );

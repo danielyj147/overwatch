@@ -115,13 +115,30 @@ export function Toolbar() {
   }, [selection.featureIds, handleDelete, handleUndo, handleRedo]);
 
   return (
-    <header className="h-12 bg-surface border-b border-gray-700 flex items-center px-4 gap-2">
+    <header
+      className="toolbar-container h-12 flex items-center px-4 gap-2"
+      style={{
+        backgroundColor: 'var(--color-surface)',
+        borderBottom: '1px solid var(--color-border)',
+      }}
+    >
       {/* Logo */}
-      <div className="flex items-center gap-2 pr-4 border-r border-gray-700">
-        <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+      <div
+        className="flex items-center gap-2 pr-4"
+        style={{ borderRight: '1px solid var(--color-border)' }}
+      >
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center glow-box"
+          style={{ backgroundColor: 'var(--color-accent)' }}
+        >
           <div className="w-3 h-3 rounded-full border-2 border-white" />
         </div>
-        <span className="font-semibold text-white">Overwatch</span>
+        <span
+          className="font-semibold glow-text"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Overwatch
+        </span>
       </div>
 
       {/* Drawing tools */}
@@ -139,7 +156,7 @@ export function Toolbar() {
       </div>
 
       {/* Separator */}
-      <div className="w-px h-6 bg-gray-700" />
+      <div className="w-px h-6" style={{ backgroundColor: 'var(--color-border)' }} />
 
       {/* Edit actions */}
       <div className="flex items-center gap-1 px-2">
@@ -173,8 +190,11 @@ export function Toolbar() {
       <div className="flex-1" />
 
       {/* Room name */}
-      <div className="text-sm text-gray-400 pr-4 border-r border-gray-700">
-        Room: <span className="text-white">{roomName || 'default-operation'}</span>
+      <div
+        className="text-sm pr-4"
+        style={{ color: 'var(--color-text-muted)', borderRight: '1px solid var(--color-border)' }}
+      >
+        Room: <span style={{ color: 'var(--color-text-primary)' }}>{roomName || 'default-operation'}</span>
       </div>
 
       {/* User info and logout */}
@@ -182,16 +202,17 @@ export function Toolbar() {
         <div className="flex items-center gap-3 pl-4">
           <div className="flex items-center gap-2">
             <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white"
+              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white glow-box"
               style={{ backgroundColor: user.color }}
             >
               {user.name.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm text-white">{user.name}</span>
+            <span className="text-sm" style={{ color: 'var(--color-text-primary)' }}>{user.name}</span>
           </div>
           <button
             onClick={logout}
-            className="tool-btn text-gray-400 hover:text-red-400"
+            className="tool-btn"
+            style={{ color: 'var(--color-text-muted)' }}
             title="Logout"
           >
             <LogOut size={16} />

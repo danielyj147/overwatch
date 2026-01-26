@@ -3,25 +3,34 @@
 @tailwind utilities;
 
 :root {
+  /* Default theme colors (overridden by JS) */
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-light: #334155;
+  --color-surface-dark: #0f172a;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-accent: #3b82f6;
+  --color-accent-dark: #2563eb;
+  --color-accent-glow: rgba(59, 130, 246, 0.5);
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #06b6d4;
+  --color-border: #334155;
+  --color-border-light: #475569;
+  --color-glow: rgba(59, 130, 246, 0.3);
+  --color-glow-intense: rgba(59, 130, 246, 0.6);
+  --color-scanline: transparent;
+  --border-radius: 0.5rem;
+  --glow-intensity: 0;
+
   /* NATO APP-6 standard colors */
   --color-friendly: #4A90D9;
   --color-hostile: #FF6B6B;
   --color-neutral: #4CAF50;
   --color-unknown: #FFD54F;
-
-  /* Operational status colors */
-  --color-active: #4CAF50;
-  --color-inactive: #9E9E9E;
-  --color-alert: #FF9800;
-  --color-critical: #F44336;
-
-  /* UI colors */
-  --color-surface: #1E1E2E;
-  --color-surface-light: #2A2A3E;
-  --color-surface-dark: #15151F;
-  --color-accent: #4A90D9;
-  --color-text: #E0E0E0;
-  --color-text-muted: #9E9E9E;
 
   /* Map UI */
   --sidebar-width: 300px;
@@ -35,8 +44,10 @@
   }
 
   body {
-    @apply bg-surface text-gray-100;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
     font-family: 'Inter', system-ui, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   /* Custom scrollbar */
@@ -46,88 +57,319 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-surface-dark;
+    background-color: var(--color-surface-dark);
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-surface-light rounded;
+    background-color: var(--color-surface-light);
+    border-radius: var(--border-radius);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-600;
+    background-color: var(--color-border-light);
   }
 }
+
+/* ============================================
+   FUTURISTIC THEME EFFECTS
+   ============================================ */
+
+/* Scanlines overlay */
+body.theme-scanlines::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    var(--color-scanline) 0px,
+    var(--color-scanline) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation: scanlines 0.1s linear infinite;
+}
+
+@keyframes scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(3px); }
+}
+
+/* Glow effects */
+body.theme-glow .glow-box {
+  box-shadow:
+    0 0 10px var(--color-glow),
+    0 0 20px var(--color-glow),
+    inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+body.theme-glow .glow-text {
+  text-shadow:
+    0 0 10px var(--color-accent-glow),
+    0 0 20px var(--color-accent-glow),
+    0 0 30px var(--color-accent-glow);
+}
+
+body.theme-glow .glow-border {
+  box-shadow:
+    0 0 5px var(--color-accent-glow),
+    inset 0 0 5px var(--color-accent-glow);
+}
+
+/* Pulse animation for glow themes */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+body.theme-glow .glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Holographic flicker effect */
+@keyframes holo-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  95% { opacity: 0.9; }
+  96% { opacity: 1; }
+}
+
+body.theme-glow .holo-flicker {
+  animation: holo-flicker 4s ease-in-out infinite;
+}
+
+/* Data stream effect */
+@keyframes data-stream {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+body.theme-glow .data-stream {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--color-accent-glow) 50%,
+    transparent 100%
+  );
+  background-size: 100% 200%;
+  animation: data-stream 3s linear infinite;
+}
+
+/* ============================================
+   COMPONENT STYLES
+   ============================================ */
 
 @layer components {
   /* Panel styles */
   .panel {
-    @apply bg-surface-light border border-gray-700 rounded-lg shadow-lg;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  }
+
+  body.theme-glow .panel {
+    box-shadow:
+      0 0 10px var(--color-glow),
+      0 10px 15px -3px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 var(--color-border-light);
   }
 
   /* Button base */
   .btn {
-    @apply px-4 py-2 rounded-md font-medium transition-colors duration-150;
-    @apply focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+
+  .btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-accent-glow);
   }
 
   .btn-primary {
-    @apply btn bg-accent text-white hover:bg-accent-dark;
+    background-color: var(--color-accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-accent-dark);
+  }
+
+  body.theme-glow .btn-primary {
+    box-shadow: 0 0 15px var(--color-accent-glow);
+  }
+
+  body.theme-glow .btn-primary:hover {
+    box-shadow: 0 0 25px var(--color-accent-glow);
   }
 
   .btn-secondary {
-    @apply btn bg-surface-light text-gray-200 hover:bg-surface border border-gray-600;
+    background-color: var(--color-surface-light);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-gray-300 hover:bg-surface-light hover:text-white;
+    background-color: transparent;
+    color: var(--color-text-secondary);
+  }
+
+  .btn-ghost:hover {
+    background-color: var(--color-surface-light);
+    color: var(--color-text-primary);
   }
 
   .btn-icon {
-    @apply p-2 rounded-md transition-colors duration-150;
-    @apply hover:bg-surface-light text-gray-400 hover:text-white;
-    @apply focus:outline-none focus:ring-2 focus:ring-accent;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    transition: all 0.15s ease;
+    color: var(--color-text-muted);
+  }
+
+  .btn-icon:hover {
+    background-color: var(--color-surface-light);
+    color: var(--color-text-primary);
   }
 
   /* Tool button */
   .tool-btn {
-    @apply w-10 h-10 flex items-center justify-center rounded-lg;
-    @apply text-gray-400 hover:text-white hover:bg-surface-light;
-    @apply transition-colors duration-150;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius);
+    color: var(--color-text-muted);
+    transition: all 0.15s ease;
+  }
+
+  .tool-btn:hover {
+    background-color: var(--color-surface-light);
+    color: var(--color-text-primary);
   }
 
   .tool-btn.active {
-    @apply bg-accent text-white shadow-glow;
+    background-color: var(--color-accent);
+    color: white;
+  }
+
+  body.theme-glow .tool-btn.active {
+    box-shadow: 0 0 15px var(--color-accent-glow);
   }
 
   /* Status indicator */
   .status-dot {
-    @apply w-2 h-2 rounded-full;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
   }
 
   .status-dot.connected {
-    @apply bg-green-500 animate-pulse-slow;
+    background-color: var(--color-success);
+    animation: pulse-slow 2s ease-in-out infinite;
+  }
+
+  body.theme-glow .status-dot.connected {
+    box-shadow: 0 0 10px var(--color-success);
   }
 
   .status-dot.connecting {
-    @apply bg-yellow-500 animate-pulse;
+    background-color: var(--color-warning);
+    animation: pulse 1s ease-in-out infinite;
   }
 
   .status-dot.disconnected {
-    @apply bg-red-500;
+    background-color: var(--color-error);
   }
 
   /* User cursor */
   .user-cursor {
-    @apply absolute pointer-events-none z-50;
+    position: absolute;
+    pointer-events: none;
+    z-index: 50;
     transform: translate(-2px, -2px);
   }
 
   .user-cursor-dot {
-    @apply w-4 h-4 rounded-full border-2 border-white;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid white;
   }
 
   .user-cursor-label {
-    @apply ml-3 -mt-1 px-2 py-0.5 rounded text-xs text-white whitespace-nowrap;
+    margin-left: 0.75rem;
+    margin-top: -0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--border-radius);
+    font-size: 0.75rem;
+    color: white;
+    white-space: nowrap;
+  }
+
+  /* Futuristic input */
+  .input-futuristic {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 0.5rem 1rem;
+    color: var(--color-text-primary);
+    transition: all 0.2s ease;
+  }
+
+  .input-futuristic:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  body.theme-glow .input-futuristic:focus {
+    box-shadow: 0 0 10px var(--color-accent-glow);
+  }
+
+  /* Corner accents for futuristic panels */
+  .corner-accents {
+    position: relative;
+  }
+
+  body.theme-glow .corner-accents::before,
+  body.theme-glow .corner-accents::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-accent);
+  }
+
+  body.theme-glow .corner-accents::before {
+    top: -1px;
+    left: -1px;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  body.theme-glow .corner-accents::after {
+    bottom: -1px;
+    right: -1px;
+    border-left: none;
+    border-top: none;
+  }
+
+  /* Hexagon pattern background */
+  .hex-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2300f0ff' fill-opacity='0.03'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 }
 
@@ -144,44 +386,137 @@
 
   /* Map container */
   .map-container {
-    @apply absolute inset-0;
+    position: absolute;
+    inset: 0;
   }
 
   /* Overlay positioning */
   .overlay-top-left {
-    @apply absolute top-4 left-4;
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
   }
 
   .overlay-top-right {
-    @apply absolute top-4 right-4;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
   }
 
   .overlay-bottom-left {
-    @apply absolute bottom-4 left-4;
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
   }
 
   .overlay-bottom-right {
-    @apply absolute bottom-4 right-4;
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  /* Animation utilities */
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 2s ease-in-out infinite;
+  }
+
+  /* Text glow utility */
+  .text-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  /* Border glow utility */
+  .border-glow {
+    box-shadow: 0 0 10px var(--color-glow);
   }
 }
 
-/* MapLibre GL overrides */
+/* ============================================
+   MAPLIBRE GL OVERRIDES
+   ============================================ */
+
 .maplibregl-ctrl-group {
-  @apply bg-surface-light border-gray-700 shadow-lg !important;
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.theme-glow .maplibregl-ctrl-group {
+  box-shadow: 0 0 10px var(--color-glow) !important;
 }
 
 .maplibregl-ctrl-group button {
-  @apply text-gray-300 hover:text-white hover:bg-surface !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background-color: var(--color-surface-light) !important;
+  color: var(--color-text-primary) !important;
 }
 
 .maplibregl-ctrl-attrib {
-  @apply bg-surface/80 text-gray-500 text-xs !important;
+  background-color: var(--color-surface-dark) !important;
+  color: var(--color-text-muted) !important;
+  font-size: 0.75rem !important;
 }
 
 .maplibregl-popup-content {
-  @apply bg-surface-light text-gray-200 border border-gray-700 rounded-lg shadow-lg !important;
+  background-color: var(--color-surface) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
 }
 
 .maplibregl-popup-close-button {
-  @apply text-gray-400 hover:text-white !important;
+  color: var(--color-text-muted) !important;
+}
+
+.maplibregl-popup-close-button:hover {
+  color: var(--color-text-primary) !important;
+}
+
+/* ============================================
+   COMMAND CENTER SPECIFIC STYLES
+   ============================================ */
+
+[data-theme="command-center"] {
+  /* Grid pattern overlay */
+  background-image:
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: -1px -1px;
+}
+
+[data-theme="command-center"] .toolbar-container,
+[data-theme="command-center"] .sidebar-container,
+[data-theme="command-center"] .statusbar-container {
+  backdrop-filter: blur(10px);
+  background-color: rgba(10, 15, 24, 0.9) !important;
+}
+
+/* Tactical theme grid */
+[data-theme="tactical"] {
+  background-image:
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Cyberpunk diagonal lines */
+[data-theme="cyberpunk"] {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 35px,
+    var(--color-border) 35px,
+    var(--color-border) 36px
+  );
 }

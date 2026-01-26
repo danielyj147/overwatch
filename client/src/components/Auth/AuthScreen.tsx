@@ -30,29 +30,54 @@ export function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ backgroundColor: 'var(--color-background)' }}
+    >
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center">
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center glow-box"
+              style={{ backgroundColor: 'var(--color-accent)' }}
+            >
               <div className="w-5 h-5 rounded-full border-2 border-white" />
             </div>
-            <span className="text-3xl font-bold text-white">Overwatch</span>
+            <span
+              className="text-3xl font-bold glow-text"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Overwatch
+            </span>
           </div>
-          <p className="text-gray-400">Real-time collaborative mapping</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>Real-time collaborative mapping</p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-surface-light rounded-lg border border-gray-700 p-6">
-          <h2 className="text-xl font-semibold text-white mb-6">
+        <div
+          className="rounded-lg p-6 corner-accents glow-border"
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--border-radius)',
+          }}
+        >
+          <h2
+            className="text-xl font-semibold mb-6"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
             {mode === 'login' ? 'Welcome back' : 'Create an account'}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
                   Display Name
                 </label>
                 <input
@@ -62,13 +87,17 @@ export function AuthScreen() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="John Doe"
                   required={mode === 'signup'}
-                  className="w-full px-4 py-2 bg-surface border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-accent transition-colors"
+                  className="input-futuristic w-full"
                 />
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium mb-1"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
                 Email
               </label>
               <input
@@ -78,12 +107,16 @@ export function AuthScreen() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full px-4 py-2 bg-surface border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-accent transition-colors"
+                className="input-futuristic w-full"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium mb-1"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
                 Password
               </label>
               <div className="relative">
@@ -95,12 +128,13 @@ export function AuthScreen() {
                   placeholder="••••••••"
                   required
                   minLength={6}
-                  className="w-full px-4 py-2 pr-10 bg-surface border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-accent transition-colors"
+                  className="input-futuristic w-full pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: 'var(--color-text-muted)' }}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -108,7 +142,14 @@ export function AuthScreen() {
             </div>
 
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
+              <div
+                className="p-3 rounded-lg text-sm"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  color: 'var(--color-error)',
+                }}
+              >
                 {error}
               </div>
             )}
@@ -117,11 +158,10 @@ export function AuthScreen() {
               type="submit"
               disabled={isLoading}
               className={clsx(
-                'w-full py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2',
-                isLoading
-                  ? 'bg-accent/50 cursor-not-allowed'
-                  : 'bg-accent hover:bg-accent-dark text-white'
+                'w-full py-2.5 font-medium transition-all flex items-center justify-center gap-2 btn-primary',
+                isLoading && 'opacity-50 cursor-not-allowed'
               )}
+              style={{ borderRadius: 'var(--border-radius)' }}
             >
               {isLoading && <Loader2 size={18} className="animate-spin" />}
               {mode === 'login' ? 'Sign In' : 'Create Account'}
@@ -131,15 +171,18 @@ export function AuthScreen() {
           <div className="mt-6 text-center">
             <button
               onClick={switchMode}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
+              className="text-sm transition-colors"
+              style={{ color: 'var(--color-text-muted)' }}
             >
               {mode === 'login' ? (
                 <>
-                  Don't have an account? <span className="text-accent">Sign up</span>
+                  Don't have an account?{' '}
+                  <span style={{ color: 'var(--color-accent)' }}>Sign up</span>
                 </>
               ) : (
                 <>
-                  Already have an account? <span className="text-accent">Sign in</span>
+                  Already have an account?{' '}
+                  <span style={{ color: 'var(--color-accent)' }}>Sign in</span>
                 </>
               )}
             </button>
@@ -147,7 +190,10 @@ export function AuthScreen() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-500 text-xs mt-6">
+        <p
+          className="text-center text-xs mt-6"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
       </div>

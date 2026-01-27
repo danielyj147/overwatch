@@ -39,7 +39,6 @@ services:
 
   postgres:
     image: postgis/postgis:16-3.4
-    platform: linux/arm64
     container_name: overwatch-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}

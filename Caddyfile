@@ -1,0 +1,66 @@
+{
+    # Global options
+    email admin@{$DOMAIN_NAME}
+}
+
+{$DOMAIN_NAME} {
+    # Frontend static files
+    root * /usr/share/caddy
+    file_server
+    try_files {path} /index.html
+
+    # WebSocket for Hocuspocus
+    handle /ws* {
+        reverse_proxy hocuspocus:1234 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Vector tiles from Martin
+    handle /tiles/* {
+        reverse_proxy martin:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+        }
+    }
+
+    # Health check endpoint
+    handle /health {
+        respond "OK" 200
+    }
+
+    # Enable compression
+    encode gzip zstd
+
+    # Security headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+
+        # Clickjacking protection
+        X-Frame-Options "SAMEORIGIN"
+
+        # XSS protection
+        X-XSS-Protection "1; mode=block"
+
+        # Referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+
+        # Remove server header
+        -Server
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}

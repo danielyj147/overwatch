@@ -54,3 +54,23 @@ pgdata/
 .cache/
 tmp/
 temp/
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+terraform/.terraform.tfstate.lock.info
+terraform/crash.log
+terraform/crash.*.log
+terraform/*.tfplan
+
+# Backups
+backups/
+*.sql
+*.sql.gz
+
+# Deployment outputs
+terraform-outputs.txt
+deployment-info.txt

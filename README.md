@@ -72,6 +72,50 @@ pnpm dev
 
 The application will be available at `http://localhost:5173`.
 
+## AWS Deployment
+
+Deploy Overwatch to AWS for **under $10/month** using our Terraform configuration.
+
+### Quick Deploy (30 minutes)
+
+```bash
+# 1. Configure
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your AWS and Cloudflare details
+
+# 2. Deploy infrastructure
+terraform init
+terraform apply
+
+# 3. Deploy application
+cd ..
+./scripts/deploy.sh
+```
+
+**Documentation**:
+- 📖 [Quick Start Guide](./docs/AWS-QUICKSTART.md) - Get started in 30 minutes
+- 📖 [Full Deployment Guide](./docs/DEPLOYMENT.md) - Comprehensive deployment instructions
+- 📖 [Deployment Checklist](./docs/DEPLOYMENT-CHECKLIST.md) - Step-by-step checklist
+- 📖 [Cost Analysis](./docs/COST-ANALYSIS.md) - Detailed cost breakdown and optimization
+- 📖 [Terraform README](./terraform/README.md) - Infrastructure documentation
+
+**Features**:
+- ✅ Single EC2 instance (t4g.micro)
+- ✅ Automatic SSL via Caddy + Let's Encrypt
+- ✅ Cloudflare DNS integration
+- ✅ ~$5/month total cost
+- ✅ Easy to scale up when needed
+
+**Helper Scripts**:
+```bash
+./scripts/status.sh       # Check service status
+./scripts/logs.sh         # View logs
+./scripts/ssh-connect.sh  # SSH to instance
+./scripts/backup.sh       # Backup database
+./scripts/restore.sh      # Restore from backup
+```
+
 ## Development
 
 ### Project Structure

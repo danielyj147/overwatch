@@ -1,0 +1,19 @@
+# AWS Configuration
+aws_region = "us-east-1"
+instance_type = "t4g.micro"  # Change to "t4g.small" for more memory (2GB)
+
+# Domain Configuration
+domain_name = "overwatch.danielyj.com"
+cloudflare_subdomain = "overwatch"
+cloudflare_zone_id = "YOUR_CLOUDFLARE_ZONE_ID"  # Get from Cloudflare dashboard
+cloudflare_api_token = "YOUR_CLOUDFLARE_API_TOKEN"  # Create token with Zone.DNS.Edit permissions
+
+# SSH Configuration
+ssh_public_key = "ssh-ed25519 AAAAC3... your-email@example.com"
+ssh_allowed_cidrs = ["0.0.0.0/0"]  # Restrict to your IP for better security: ["YOUR_IP/32"]
+
+# Application Secrets (generate with commands below)
+# db_password: openssl rand -base64 32
+# hocuspocus_jwt_secret: openssl rand -hex 32
+db_password = "GENERATE_WITH_OPENSSL_RAND"
+hocuspocus_jwt_secret = "GENERATE_WITH_OPENSSL_RAND"

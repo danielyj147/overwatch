@@ -1,0 +1,193 @@
+# Docker Compose for AWS EC2 deployment
+# Optimized for t4g.micro (1GB RAM, 2 vCPU)
+# Total memory allocated: ~896MB, leaving ~128MB for OS/overhead
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: overwatch-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./client/dist:/usr/share/caddy:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - caddy_logs:/var/log/caddy
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME}
+    depends_on:
+      - hocuspocus
+      - martin
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - overwatch-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+        reservations:
+          memory: 32M
+
+  postgres:
+    image: postgis/postgis:16-3.4
+    platform: linux/arm64
+    container_name: overwatch-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Memory tuning for 1GB instance
+      POSTGRES_SHARED_BUFFERS: 128MB
+      POSTGRES_MAX_CONNECTIONS: 50
+      POSTGRES_WORK_MEM: 4MB
+      POSTGRES_MAINTENANCE_WORK_MEM: 64MB
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c max_connections=50
+      -c work_mem=4MB
+      -c maintenance_work_mem=64MB
+      -c effective_cache_size=256MB
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - overwatch-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  redis:
+    image: redis:7-alpine
+    platform: linux/arm64
+    container_name: overwatch-redis
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 64mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - overwatch-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+        reservations:
+          memory: 32M
+
+  martin:
+    image: ghcr.io/maplibre/martin:v0.15.0
+    platform: linux/arm64
+    container_name: overwatch-martin
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      MARTIN_CACHE_SIZE_MB: 64
+    volumes:
+      - ./martin/config.yaml:/config.yaml:ro
+    command: --config /config.yaml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - overwatch-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  hocuspocus:
+    build:
+      context: ./server/hocuspocus
+      dockerfile: Dockerfile
+      platforms:
+        - linux/arm64
+    container_name: overwatch-hocuspocus
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      HOCUSPOCUS_SECRET: ${HOCUSPOCUS_SECRET}
+      PORT: 1234
+      NODE_ENV: production
+      # Node.js memory limit
+      NODE_OPTIONS: "--max-old-space-size=200"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - overwatch-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          memory: 128M
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+  caddy_logs:
+    driver: local
+
+networks:
+  overwatch-network:
+    driver: bridge

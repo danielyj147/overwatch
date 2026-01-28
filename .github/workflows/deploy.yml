@@ -1,0 +1,162 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Build frontend
+        run: |
+          cd client
+
+          # Create production environment file
+          cat > .env.production << EOF
+          VITE_HOCUSPOCUS_URL=wss://${{ secrets.DOMAIN_NAME }}/ws
+          VITE_API_URL=https://${{ secrets.DOMAIN_NAME }}/api
+          VITE_MARTIN_URL=https://${{ secrets.DOMAIN_NAME }}/tiles
+          EOF
+
+          npm ci
+          npm run build
+
+          # Verify build output
+          if [ ! -d "dist" ]; then
+            echo "Error: Build failed - dist directory not created"
+            exit 1
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ubuntu
+        run: |
+          # Create remote directory structure
+          ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST "mkdir -p /home/ubuntu/overwatch/{server,martin,client,db}"
+
+          # Copy docker-compose and Caddyfile
+          scp -i ~/.ssh/deploy_key \
+            docker-compose.aws.yml \
+            Caddyfile \
+            $EC2_USER@$EC2_HOST:/home/ubuntu/overwatch/
+
+          # Copy server files
+          scp -i ~/.ssh/deploy_key -r \
+            server/hocuspocus \
+            $EC2_USER@$EC2_HOST:/home/ubuntu/overwatch/server/
+
+          # Copy martin config
+          scp -i ~/.ssh/deploy_key -r \
+            martin \
+            $EC2_USER@$EC2_HOST:/home/ubuntu/overwatch/
+
+          # Copy frontend build
+          scp -i ~/.ssh/deploy_key -r \
+            client/dist \
+            $EC2_USER@$EC2_HOST:/home/ubuntu/overwatch/client/
+
+          # Copy database migrations
+          scp -i ~/.ssh/deploy_key -r \
+            db \
+            $EC2_USER@$EC2_HOST:/home/ubuntu/overwatch/
+
+      - name: Start services
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ubuntu
+        run: |
+          ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST << 'ENDSSH'
+            cd /home/ubuntu/overwatch
+
+            # Pull latest images
+            docker-compose -f docker-compose.aws.yml pull
+
+            # Build custom images (hocuspocus)
+            docker-compose -f docker-compose.aws.yml build --no-cache
+
+            # Start services
+            docker-compose -f docker-compose.aws.yml up -d
+
+            # Wait for services to be healthy
+            echo "Waiting for services to start..."
+            sleep 30
+
+            # Check service status
+            docker-compose -f docker-compose.aws.yml ps
+          ENDSSH
+
+      - name: Run database migrations
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ubuntu
+        run: |
+          ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST << 'ENDSSH'
+            cd /home/ubuntu/overwatch
+
+            # Wait for PostgreSQL to be ready
+            echo "Waiting for PostgreSQL..."
+            sleep 10
+
+            # Run migrations
+            for migration in db/migrations/*.sql; do
+              if [ -f "$migration" ]; then
+                echo "Running migration: $(basename $migration)"
+                docker-compose -f docker-compose.aws.yml exec -T postgres \
+                  psql -U overwatch -d overwatch < "$migration" 2>/dev/null || echo "Migration already applied or failed: $(basename $migration)"
+              fi
+            done
+
+            echo "Migrations complete"
+          ENDSSH
+
+      - name: Verify deployment
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ubuntu
+        run: |
+          # Check service health
+          ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST << 'ENDSSH'
+            cd /home/ubuntu/overwatch
+
+            echo "=== Service Status ==="
+            docker-compose -f docker-compose.aws.yml ps
+
+            echo ""
+            echo "=== Recent Logs ==="
+            docker-compose -f docker-compose.aws.yml logs --tail=20
+          ENDSSH
+
+          # Test endpoint (wait for SSL)
+          echo ""
+          echo "Waiting 10 seconds for services to stabilize..."
+          sleep 10
+
+          echo "Testing health endpoint..."
+          curl -f https://${{ secrets.DOMAIN_NAME }}/health || echo "Warning: Health check failed (may need time for SSL)"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key

@@ -80,6 +80,26 @@ Infrastructure-as-code documentation:
 
 **Best for**: Understanding and modifying infrastructure.
 
+### [GitHub Actions Setup](./GITHUB-ACTIONS.md)
+
+Automatic deployment with CI/CD:
+- Setup instructions (3 secrets needed)
+- Workflow details
+- Monitoring deployments
+- Troubleshooting CI/CD
+- Security best practices
+
+**Best for**: Setting up automatic deployments.
+
+Infrastructure-as-code documentation:
+- Terraform configuration details
+- Resource specifications
+- Variables and outputs
+- Updating infrastructure
+- Troubleshooting Terraform issues
+
+**Best for**: Understanding and modifying infrastructure.
+
 ## Helper Scripts
 
 All scripts located in `/scripts/`:

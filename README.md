@@ -72,9 +72,28 @@ pnpm dev
 
 The application will be available at `http://localhost:5173`.
 
-## AWS Deployment
+## Deployment Options
 
-Deploy Overwatch to AWS for **under $10/month** using our Terraform configuration.
+### Local Linux PC
+
+Deploy on your local Linux machine:
+
+```bash
+# Quick setup script
+./scripts/local-setup.sh
+
+# Or see: LOCAL-DEPLOY.md
+```
+
+**Options**:
+- 🏠 **Development**: Localhost only, 5-minute setup
+- 🌐 **Production**: Public access with SSL, 30-minute setup
+
+See [Local Deployment Guide](./LOCAL-DEPLOY.md)
+
+### AWS Cloud
+
+Deploy to AWS for **under $10/month** using Terraform:
 
 ### Quick Deploy (30 minutes)
 
@@ -115,6 +134,19 @@ cd ..
 ./scripts/backup.sh       # Backup database
 ./scripts/restore.sh      # Restore from backup
 ```
+
+### GitHub Actions (CI/CD)
+
+Automatic deployment on every push to master:
+
+1. **Add GitHub Secrets** (Settings → Secrets):
+   - `EC2_SSH_KEY` - Your SSH private key
+   - `EC2_HOST` - EC2 instance IP
+   - `DOMAIN_NAME` - overwatch.danielyj.com
+
+2. **Push to master** - Deployment starts automatically
+
+See [GitHub Actions Setup](./.github/DEPLOY.md) for details.
 
 ## Development
 

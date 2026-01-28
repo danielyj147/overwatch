@@ -79,6 +79,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    platform: linux/amd64
     container_name: overwatch-redis
     volumes:
       - redis_data:/data
@@ -109,6 +110,7 @@ services:
 
   martin:
     image: ghcr.io/maplibre/martin:v0.15.0
+    platform: linux/amd64
     container_name: overwatch-martin
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -140,6 +142,7 @@ services:
     build:
       context: ./server/hocuspocus
       dockerfile: Dockerfile
+      platform: linux/amd64
     container_name: overwatch-hocuspocus
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}

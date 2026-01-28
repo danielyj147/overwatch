@@ -58,13 +58,13 @@ if [ "$DEPLOY_TYPE" = "1" ]; then
 
     # Start services
     echo -e "\n${BLUE}Starting services...${NC}"
-    docker compose up -d
+    docker-compose up -d
 
     echo -e "\n${BLUE}Waiting for services to be healthy...${NC}"
     sleep 10
 
     # Show status
-    docker compose ps
+    docker-compose ps
 
     # Start frontend
     echo -e "\n${BLUE}Setting up frontend...${NC}"
@@ -131,13 +131,13 @@ EOF
 
     # Start services
     echo -e "\n${BLUE}Starting production services...${NC}"
-    docker compose -f docker-compose.aws.yml up -d
+    docker-compose -f docker-compose.aws.yml up -d
 
     echo -e "\n${BLUE}Waiting for services to start...${NC}"
     sleep 15
 
     # Show status
-    docker compose -f docker-compose.aws.yml ps
+    docker-compose -f docker-compose.aws.yml ps
 
     echo -e "\n${GREEN}=== Production Deployment Complete! ===${NC}"
     echo -e "\n${YELLOW}Important next steps:${NC}"

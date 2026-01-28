@@ -139,10 +139,10 @@ services:
           memory: 128M
 
   hocuspocus:
+    platform: linux/amd64
     build:
       context: ./server/hocuspocus
       dockerfile: Dockerfile
-      platform: linux/amd64
     container_name: overwatch-hocuspocus
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}

@@ -91,6 +91,30 @@ Automatic deployment with CI/CD:
 
 **Best for**: Setting up automatic deployments.
 
+### [Windows Deployment Guide](./WINDOWS-DEPLOYMENT.md)
+
+Deploy on Windows 11 Mini PC:
+- Docker Desktop setup
+- Development and production modes
+- PowerShell scripts
+- Task Scheduler auto-start
+- Windows Firewall configuration
+- Performance optimization
+
+**Best for**: Windows 11 users wanting local deployment.
+
+### [Linux Local Deployment](./LOCAL-DEPLOYMENT.md)
+
+Deploy on local Linux PC:
+- Docker CE setup
+- Development and production modes
+- Dynamic DNS configuration
+- Systemd service setup
+- Firewall configuration
+- Backup automation
+
+**Best for**: Linux users wanting local deployment.
+
 Infrastructure-as-code documentation:
 - Terraform configuration details
 - Resource specifications

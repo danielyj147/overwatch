@@ -74,6 +74,23 @@ The application will be available at `http://localhost:5173`.
 
 ## Deployment Options
 
+### Windows 11
+
+Deploy on Windows 11 Mini PC:
+
+```powershell
+# Quick setup script (PowerShell)
+.\scripts\windows-setup.ps1 -Mode dev
+
+# Or see: WINDOWS-DEPLOY.md
+```
+
+**Options**:
+- 🏠 **Development**: Localhost only, 5-minute setup
+- 🌐 **Production**: Public access with SSL, 30-minute setup
+
+See [Windows Deployment Guide](./WINDOWS-DEPLOY.md)
+
 ### Local Linux PC
 
 Deploy on your local Linux machine:

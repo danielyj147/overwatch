@@ -5,7 +5,7 @@ variable "aws_region" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type (t4g.micro for <$10/month)"
+  description = "EC2 instance type (t3.micro)"
   type        = string
   default     = "t4g.micro"
 }

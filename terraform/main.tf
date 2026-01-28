@@ -128,7 +128,7 @@ resource "aws_key_pair" "overwatch" {
 
 # EC2 Instance
 resource "aws_instance" "overwatch" {
-  ami           = data.aws_ami.ubuntu_arm64.id
+  ami           = data.aws_ami.ubuntu_amd64.id
   instance_type = var.instance_type
   key_name      = aws_key_pair.overwatch.key_name
   subnet_id     = aws_subnet.public.id
@@ -198,18 +198,18 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-data "aws_ami" "ubuntu_arm64" {
+data "aws_ami" "ubuntu_amd64" {
   most_recent = true
   owners      = ["099720109477"] # Canonical
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 
   filter {
     name   = "architecture"
-    values = ["arm64"]
+    values = ["x86_64"]  # Changed from "arm64"
   }
 
   filter {

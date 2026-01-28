@@ -128,7 +128,7 @@ resource "aws_key_pair" "overwatch" {
 
 # EC2 Instance
 resource "aws_instance" "overwatch" {
-  ami           = data.aws_ami.ubuntu_amd64.id
+  ami           = data.aws_ami.ubuntu_amd64.id 
   instance_type = var.instance_type
   key_name      = aws_key_pair.overwatch.key_name
   subnet_id     = aws_subnet.public.id

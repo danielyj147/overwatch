@@ -1,6 +1,6 @@
 # AWS Configuration
 aws_region = "us-east-1"
-instance_type = "t4g.micro"  # Change to "t4g.small" for more memory (2GB)
+instance_type = "t3.micro"  # Change to "t3.small" for more memory (2GB)
 
 # Domain Configuration
 domain_name = "overwatch.danielyj.com"

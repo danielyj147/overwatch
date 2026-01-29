@@ -106,6 +106,26 @@ Press `Ctrl+C` in both PowerShell windows to stop.
 
 Make Overwatch accessible from the internet with SSL.
 
+### Quick Production Setup (Recommended)
+
+If you just want to get started quickly with production deployment:
+
+```powershell
+# Run the automated setup script
+.\scripts\windows-setup.ps1 -Mode prod
+
+# Enter your domain when prompted: overwatch.danielyj.com
+```
+
+This will automatically:
+- Generate secure passwords
+- Create .env file
+- Build frontend with production URLs
+- Configure Windows Firewall
+- Start all services with SSL
+
+Then skip to [Router Port Forwarding](#2-router-port-forwarding) and [Domain Configuration](#domain-configuration).
+
 ### Architecture
 
 ```
@@ -119,7 +139,7 @@ Docker Desktop (WSL2)
    ↓
 Caddy (Reverse Proxy + SSL)
    ├─→ Frontend (Static Files)
-   ├─→ Hocuspocus (WebSocket)
+   ├─→ Hocuspocus (WebSocket + Auth API)
    └─→ Martin (Vector Tiles)
 ```
 
@@ -217,9 +237,13 @@ If using your own domain (danielyj.com):
    - Proxy status: **DNS only (gray cloud)** ← Important!
    - TTL: Auto
 
-### 5. Setup Environment Files
+---
 
-Open PowerShell in your overwatch directory:
+## Manual Production Setup (Alternative)
+
+If you prefer manual control or the automated script didn't work:
+
+### 5. Setup Environment Files
 
 ```powershell
 # Generate secure passwords
@@ -241,7 +265,7 @@ REDIS_URL=redis://redis:6379
 HOCUSPOCUS_SECRET=${jwtSecret}
 NODE_ENV=production
 
-# Domain (change to your actual domain)
+# Domain
 DOMAIN_NAME=overwatch.danielyj.com
 "@ | Out-File -Encoding UTF8 .env
 
@@ -249,10 +273,6 @@ DOMAIN_NAME=overwatch.danielyj.com
 Write-Host "Save these passwords securely:" -ForegroundColor Yellow
 Write-Host "DB Password: $dbPassword"
 Write-Host "JWT Secret: $jwtSecret"
-
-# Update Caddyfile with your domain
-$domain = "overwatch.danielyj.com"  # Change this
-(Get-Content Caddyfile) -replace '\{\$DOMAIN_NAME\}', $domain | Set-Content Caddyfile
 ```
 
 ### 6. Build Frontend
@@ -261,11 +281,10 @@ $domain = "overwatch.danielyj.com"  # Change this
 cd client
 
 # Create production environment
-$domain = "overwatch.danielyj.com"  # Change this
 @"
-VITE_HOCUSPOCUS_URL=wss://${domain}/ws
-VITE_API_URL=https://${domain}/api
-VITE_MARTIN_URL=https://${domain}/tiles
+VITE_HOCUSPOCUS_URL=wss://overwatch.danielyj.com/ws
+VITE_API_URL=https://overwatch.danielyj.com/api
+VITE_MARTIN_URL=https://overwatch.danielyj.com/tiles
 "@ | Out-File -Encoding UTF8 .env.production
 
 # Build
@@ -276,7 +295,15 @@ npm run build
 dir dist
 ```
 
-### 7. Start Production Stack
+### 7. Configure Windows Firewall
+
+```powershell
+# Run as Administrator
+New-NetFirewallRule -DisplayName "Overwatch HTTP" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Overwatch HTTPS" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow
+```
+
+### 8. Start Production Stack
 
 ```powershell
 cd ..
@@ -291,7 +318,7 @@ docker-compose -f docker-compose.aws.yml ps
 docker-compose -f docker-compose.aws.yml logs -f
 ```
 
-### 8. Wait for SSL Certificate
+### 9. Wait for SSL Certificate
 
 Caddy will automatically obtain SSL certificate from Let's Encrypt.
 
@@ -302,7 +329,7 @@ docker-compose -f docker-compose.aws.yml logs caddy | Select-String -Pattern "ac
 
 **Takes 1-2 minutes on first run**
 
-### 9. Verify Deployment
+### 10. Verify Deployment
 
 ```powershell
 # Test health endpoint

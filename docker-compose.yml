@@ -65,11 +65,13 @@ services:
     container_name: overwatch-hocuspocus
     ports:
       - "${HOCUSPOCUS_PORT:-1234}:1234"
+      - "${HOCUSPOCUS_HTTP_PORT:-1235}:1235"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-overwatch}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-overwatch}
       REDIS_URL: redis://redis:6379
       HOCUSPOCUS_SECRET: ${HOCUSPOCUS_SECRET:-your-jwt-secret-change-in-production}
       PORT: 1234
+      HTTP_PORT: 1235
     depends_on:
       postgres:
         condition: service_healthy

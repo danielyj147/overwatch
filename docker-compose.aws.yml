@@ -149,6 +149,7 @@ services:
       REDIS_URL: redis://redis:6379
       HOCUSPOCUS_SECRET: ${HOCUSPOCUS_SECRET}
       PORT: 1234
+      HTTP_PORT: 1235
       NODE_ENV: production
       # Node.js memory limit
       NODE_OPTIONS: "--max-old-space-size=200"

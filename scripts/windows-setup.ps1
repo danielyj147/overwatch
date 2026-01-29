@@ -42,6 +42,19 @@ if ($Mode -eq "dev") {
         Write-Host ".env created" -ForegroundColor Green
     }
 
+    # Create client .env if it doesn't exist
+    if (-not (Test-Path "client\.env")) {
+        Write-Host "Creating client .env file..." -ForegroundColor Yellow
+        @"
+# Development environment variables
+VITE_MAP_STYLE_URL=http://localhost:3000/style.json
+VITE_HOCUSPOCUS_URL=ws://localhost:1234
+VITE_API_URL=http://localhost:1235
+VITE_MARTIN_URL=http://localhost:3000
+"@ | Out-File -Encoding UTF8 client\.env
+        Write-Host "client\.env created" -ForegroundColor Green
+    }
+
     # Start services
     Write-Host ""
     Write-Host "Starting services..." -ForegroundColor Yellow
@@ -105,11 +118,6 @@ DOMAIN_NAME=${domain}
 "@ | Out-File -Encoding UTF8 .env
 
     Write-Host ".env created" -ForegroundColor Green
-
-    # Update Caddyfile
-    Write-Host "Updating Caddyfile..." -ForegroundColor Yellow
-    (Get-Content Caddyfile) -replace '\{\$DOMAIN_NAME\}', $domain | Set-Content Caddyfile
-    Write-Host "Caddyfile updated" -ForegroundColor Green
 
     # Build frontend
     Write-Host ""

@@ -9,6 +9,16 @@
     file_server
     try_files {path} /index.html
 
+    # API endpoints (auth, etc.)
+    handle /api/* {
+        reverse_proxy hocuspocus:1235 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
     # WebSocket for Hocuspocus
     handle /ws* {
         reverse_proxy hocuspocus:1234 {

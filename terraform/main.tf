@@ -80,8 +80,8 @@ resource "aws_security_group" "overwatch" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = var.ssh_allowed_cidrs
-    description = "SSH access"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "SSH access from anywhere"
   }
 
   # HTTP (for Let's Encrypt challenge)

@@ -29,7 +29,7 @@ jobs:
           cat > .env.production << EOF
           VITE_MAP_STYLE_URL=https://${{ secrets.DOMAIN_NAME }}/tiles/style.json
           VITE_HOCUSPOCUS_URL=wss://${{ secrets.DOMAIN_NAME }}/ws
-          VITE_API_URL=https://${{ secrets.DOMAIN_NAME }}/api
+          VITE_API_URL=https://${{ secrets.DOMAIN_NAME }}
           VITE_MARTIN_URL=https://${{ secrets.DOMAIN_NAME }}/tiles
           EOF
 

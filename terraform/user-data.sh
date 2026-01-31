@@ -40,6 +40,9 @@ POSTGRES_PASSWORD=${db_password}
 POSTGRES_DB=overwatch
 REDIS_URL=redis://redis:6379
 HOCUSPOCUS_SECRET=${hocuspocus_jwt_secret}
+HOCUSPOCUS_PORT=1234
+HOCUSPOCUS_HTTP_PORT=1235
+ADMIN_REGISTRATION_SECRET=${admin_registration_secret}
 NODE_ENV=production
 DOMAIN_NAME=${domain_name}
 ENVEOF

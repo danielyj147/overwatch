@@ -70,6 +70,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-overwatch}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-overwatch}
       REDIS_URL: redis://redis:6379
       HOCUSPOCUS_SECRET: ${HOCUSPOCUS_SECRET:-your-jwt-secret-change-in-production}
+      ADMIN_REGISTRATION_SECRET: ${ADMIN_REGISTRATION_SECRET:-change-this-admin-secret-in-production}
       PORT: 1234
       HTTP_PORT: 1235
     depends_on:

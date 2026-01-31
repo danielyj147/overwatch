@@ -1,5 +1,7 @@
 # Overwatch
 
+**Built by Daniel Jeong**
+
 A real-time collaborative Common Operational Picture (COP) platform. Think of it as "Google Docs for maps" — when one operative draws, marks, or annotates the map, every connected user sees the change instantly.
 
 ![Overwatch Screenshot 1](./assets/static/overwatch1.png)
@@ -7,11 +9,13 @@ A real-time collaborative Common Operational Picture (COP) platform. Think of it
 
 ## Features
 
-- Real-time collaborative drawing and annotation (CRDT-based, conflict-free)
-- High-performance vector tile rendering for large-scale deployments
-- Multi-layer operational overlays (units, routes, zones, threats)
-- Offline-first architecture with sync-on-reconnect
-- Role-based access control for sensitive operational data
+- ✨ Real-time collaborative drawing and annotation (CRDT-based, conflict-free)
+- 🗺️ High-performance vector tile rendering for large-scale deployments
+- 📍 Multi-layer operational overlays (units, routes, zones, threats)
+- 🔄 Offline-first architecture with sync-on-reconnect
+- 🔐 Role-based access control with admin approval system
+- 👥 Admin dashboard for user management
+- 🎨 Modern, futuristic UI design
 
 ## Technology Stack
 
@@ -110,47 +114,52 @@ See [Local Deployment Guide](./LOCAL-DEPLOY.md)
 
 ### AWS Cloud
 
-Deploy to AWS for **under $10/month** using Terraform:
+Deploy to AWS for **~$10-12/month** (or **~$3-5 with free tier**):
 
-### Quick Deploy (30 minutes)
+#### Quick Deploy (5 Steps)
 
 ```bash
-# 1. Configure
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your AWS and Cloudflare details
+# 1. Launch EC2 t3.micro instance (Ubuntu 22.04)
+# 2. SSH and clone repository
+git clone https://github.com/yourusername/overwatch.git
+cd overwatch
 
-# 2. Deploy infrastructure
-terraform init
-terraform apply
+# 3. Run automated setup
+./scripts/deploy-aws.sh
 
-# 3. Deploy application
-cd ..
-./scripts/deploy.sh
+# 4. Configure environment
+nano .env  # Update secrets and IP
+
+# 5. Deploy
+cd client && npm install && npm run build && cd ..
+docker-compose -f docker-compose.prod.yml up -d
+./scripts/run-migrations.sh
 ```
 
-**Documentation**:
-- 📖 [Quick Start Guide](./docs/AWS-QUICKSTART.md) - Get started in 30 minutes
-- 📖 [Full Deployment Guide](./docs/DEPLOYMENT.md) - Comprehensive deployment instructions
-- 📖 [Deployment Checklist](./docs/DEPLOYMENT-CHECKLIST.md) - Step-by-step checklist
-- 📖 [Cost Analysis](./docs/COST-ANALYSIS.md) - Detailed cost breakdown and optimization
-- 📖 [Terraform README](./terraform/README.md) - Infrastructure documentation
+**Complete Documentation**:
+- 🚀 [Quick Start AWS](./QUICK_START_AWS.md) - 5-minute reference guide
+- 📘 [AWS Deployment Guide](./AWS_DEPLOYMENT_GUIDE.md) - Detailed walkthrough
+- 📝 [Deployment Summary](./AWS_DEPLOYMENT_SUMMARY.md) - What you get
+- 🔧 [Setup Admin Guide](./SETUP_ADMIN.md) - Admin system setup
 
 **Features**:
-- ✅ Single EC2 instance (t4g.micro)
-- ✅ Automatic SSL via Caddy + Let's Encrypt
-- ✅ Cloudflare DNS integration
-- ✅ ~$5/month total cost
-- ✅ Easy to scale up when needed
+- ✅ Single EC2 instance (all services in Docker)
+- ✅ Cost-effective deployment (~$10-12/month, ~$3-5 with free tier)
+- ✅ Automated deployment scripts
+- ✅ Health monitoring and backups
+- ✅ Production-ready configuration
+- ✅ Easy to scale horizontally
 
 **Helper Scripts**:
 ```bash
-./scripts/status.sh       # Check service status
-./scripts/logs.sh         # View logs
-./scripts/ssh-connect.sh  # SSH to instance
-./scripts/backup.sh       # Backup database
-./scripts/restore.sh      # Restore from backup
+./scripts/deploy-aws.sh      # Automated AWS EC2 setup
+./scripts/run-migrations.sh  # Run database migrations
+./scripts/check-health.sh    # Check service health
+./scripts/update-app.sh      # Update application
+~/backup.sh                  # Backup database (auto-created)
 ```
+
+**Architecture**: Single EC2 instance running Nginx, Client, Hocuspocus, Martin, PostgreSQL, and Redis in Docker containers (~1GB RAM total).
 
 ### GitHub Actions (CI/CD)
 
@@ -226,6 +235,46 @@ docker-compose exec postgres psql -U overwatch -d overwatch -f /docker-entrypoin
 
 See [CLAUDE.md](./CLAUDE.md) for detailed architecture documentation.
 
+## Admin System
+
+Overwatch now includes a complete admin approval system:
+
+### User Flows
+
+**Admin Registration:**
+1. Click "Register as Admin" on login screen
+2. Enter credentials + admin secret key
+3. Immediately logged in → Admin Dashboard
+
+**User Registration:**
+1. Sign up with email/password
+2. See "Please wait for admin approval" message
+3. Cannot log in until approved by admin
+
+**Admin Approval:**
+1. Admin sees pending users in dashboard
+2. Reviews and approves/rejects
+3. User can immediately log in after approval
+
+See [SETUP_ADMIN.md](./SETUP_ADMIN.md) for detailed setup instructions.
+
+## API Endpoints
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/auth/admin/register` | POST | Admin Secret | Register admin |
+| `/api/auth/signup` | POST | None | Register user (pending) |
+| `/api/auth/login` | POST | None | Login (approved only) |
+| `/api/auth/admin/pending-users` | GET | Admin JWT | List pending users |
+| `/api/auth/admin/approve/:userId` | POST | Admin JWT | Approve user |
+| `/api/auth/admin/reject/:userId` | POST | Admin JWT | Reject user |
+
 ## License
 
 MIT
+
+## Author
+
+**Daniel Jeong**
+
+A production-ready real-time collaborative mapping platform.

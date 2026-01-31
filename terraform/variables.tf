@@ -54,3 +54,9 @@ variable "hocuspocus_jwt_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "admin_registration_secret" {
+  description = "Secret key required for admin registration"
+  type        = string
+  sensitive   = true
+}

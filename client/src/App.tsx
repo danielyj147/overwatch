@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/Layout/Sidebar';
 import { Toolbar } from '@/components/Layout/Toolbar';
 import { StatusBar } from '@/components/Layout/StatusBar';
 import { AuthScreen } from '@/components/Auth/AuthScreen';
+import { AdminDashboard } from '@/components/Admin/AdminDashboard';
 import { YjsProvider } from '@/lib/yjs/provider';
 import { useCollaborationStore } from '@/stores/collaborationStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -66,6 +67,11 @@ function App() {
   // Show auth screen if not logged in
   if (!user) {
     return <AuthScreen />;
+  }
+
+  // Show admin dashboard for admin users
+  if (user.role === 'admin') {
+    return <AdminDashboard />;
   }
 
   return (

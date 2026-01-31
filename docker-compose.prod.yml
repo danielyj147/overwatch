@@ -107,7 +107,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
       HOCUSPOCUS_SECRET: ${HOCUSPOCUS_SECRET}
-      PORT: 1234
+      ADMIN_REGISTRATION_SECRET: ${ADMIN_REGISTRATION_SECRET}
+      HOCUSPOCUS_PORT: 1234
+      HOCUSPOCUS_HTTP_PORT: 1235
       NODE_ENV: production
     depends_on:
       postgres:

@@ -147,9 +147,10 @@ resource "aws_instance" "overwatch" {
   }
 
   user_data = templatefile("${path.module}/user-data.sh", {
-    db_password            = var.db_password
-    hocuspocus_jwt_secret = var.hocuspocus_jwt_secret
-    domain_name           = var.domain_name
+    db_password               = var.db_password
+    hocuspocus_jwt_secret     = var.hocuspocus_jwt_secret
+    admin_registration_secret = var.admin_registration_secret
+    domain_name               = var.domain_name
   })
 
   metadata_options {

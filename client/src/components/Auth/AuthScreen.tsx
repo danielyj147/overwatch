@@ -1,31 +1,35 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Shield } from 'lucide-react';
 import { clsx } from 'clsx';
 
-type AuthMode = 'login' | 'signup';
+type AuthMode = 'login' | 'signup' | 'admin';
 
 export function AuthScreen() {
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [adminSecret, setAdminSecret] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showAdminSecret, setShowAdminSecret] = useState(false);
 
-  const { login, signup, isLoading, error, clearError } = useAuthStore();
+  const { login, signup, adminRegister, isLoading, error, signupMessage, clearError } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (mode === 'login') {
       await login(email, password);
-    } else {
+    } else if (mode === 'signup') {
       await signup(email, password, name);
+    } else if (mode === 'admin') {
+      await adminRegister(email, password, name, adminSecret);
     }
   };
 
-  const switchMode = () => {
-    setMode(mode === 'login' ? 'signup' : 'login');
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode);
     clearError();
   };
 
@@ -52,6 +56,12 @@ export function AuthScreen() {
             </span>
           </div>
           <p style={{ color: 'var(--color-text-muted)' }}>Real-time collaborative mapping</p>
+          <p
+            className="text-sm mt-2"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            Built by <span style={{ color: 'var(--color-accent)', fontWeight: 500 }}>Daniel Jeong</span>
+          </p>
         </div>
 
         {/* Auth Card */}
@@ -63,15 +73,22 @@ export function AuthScreen() {
             borderRadius: 'var(--border-radius)',
           }}
         >
-          <h2
-            className="text-xl font-semibold mb-6"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            {mode === 'login' ? 'Welcome back' : 'Create an account'}
-          </h2>
+          <div className="flex items-center gap-2 mb-6">
+            {mode === 'admin' && (
+              <Shield size={24} style={{ color: 'var(--color-accent)' }} />
+            )}
+            <h2
+              className="text-xl font-semibold"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              {mode === 'login' && 'Welcome back'}
+              {mode === 'signup' && 'Create an account'}
+              {mode === 'admin' && 'Admin Registration'}
+            </h2>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
+            {(mode === 'signup' || mode === 'admin') && (
               <div>
                 <label
                   htmlFor="name"
@@ -86,7 +103,7 @@ export function AuthScreen() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="John Doe"
-                  required={mode === 'signup'}
+                  required
                   className="input-futuristic w-full"
                 />
               </div>
@@ -141,6 +158,37 @@ export function AuthScreen() {
               </div>
             </div>
 
+            {mode === 'admin' && (
+              <div>
+                <label
+                  htmlFor="adminSecret"
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  Admin Secret Key
+                </label>
+                <div className="relative">
+                  <input
+                    id="adminSecret"
+                    type={showAdminSecret ? 'text' : 'password'}
+                    value={adminSecret}
+                    onChange={(e) => setAdminSecret(e.target.value)}
+                    placeholder="••••••••••••••••"
+                    required
+                    className="input-futuristic w-full pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminSecret(!showAdminSecret)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    {showAdminSecret ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div
                 className="p-3 rounded-lg text-sm"
@@ -154,6 +202,19 @@ export function AuthScreen() {
               </div>
             )}
 
+            {signupMessage && (
+              <div
+                className="p-3 rounded-lg text-sm"
+                style={{
+                  backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                  border: '1px solid rgba(34, 197, 94, 0.5)',
+                  color: '#22c55e',
+                }}
+              >
+                {signupMessage}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
@@ -164,14 +225,16 @@ export function AuthScreen() {
               style={{ borderRadius: 'var(--border-radius)' }}
             >
               {isLoading && <Loader2 size={18} className="animate-spin" />}
-              {mode === 'login' ? 'Sign In' : 'Create Account'}
+              {mode === 'login' && 'Sign In'}
+              {mode === 'signup' && 'Create Account'}
+              {mode === 'admin' && 'Register as Admin'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-2">
             <button
-              onClick={switchMode}
-              className="text-sm transition-colors"
+              onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
+              className="text-sm transition-colors block w-full"
               style={{ color: 'var(--color-text-muted)' }}
             >
               {mode === 'login' ? (
@@ -186,16 +249,28 @@ export function AuthScreen() {
                 </>
               )}
             </button>
+            {mode !== 'admin' && (
+              <button
+                onClick={() => switchMode('admin')}
+                className="text-xs transition-colors flex items-center justify-center gap-1 mx-auto"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                <Shield size={14} />
+                <span>Register as Admin</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* Footer */}
-        <p
-          className="text-center text-xs mt-6"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </p>
+        <div className="text-center mt-6">
+          <p
+            className="text-xs"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            © 2025 Daniel Jeong. All rights reserved.
+          </p>
+        </div>
       </div>
     </div>
   );

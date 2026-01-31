@@ -27,6 +27,7 @@ jobs:
 
           # Create production environment file
           cat > .env.production << EOF
+          VITE_MAP_STYLE_URL=https://${{ secrets.DOMAIN_NAME }}/tiles/style.json
           VITE_HOCUSPOCUS_URL=wss://${{ secrets.DOMAIN_NAME }}/ws
           VITE_API_URL=https://${{ secrets.DOMAIN_NAME }}/api
           VITE_MARTIN_URL=https://${{ secrets.DOMAIN_NAME }}/tiles
@@ -146,15 +147,24 @@ jobs:
             echo ""
             echo "=== Recent Logs ==="
             docker-compose -f docker-compose.aws.yml logs --tail=20
+
+            echo ""
+            echo "=== Container Resource Usage ==="
+            docker stats --no-stream
           ENDSSH
 
           # Test endpoint (wait for SSL)
           echo ""
-          echo "Waiting 10 seconds for services to stabilize..."
-          sleep 10
+          echo "Waiting 15 seconds for services to stabilize..."
+          sleep 15
 
-          echo "Testing health endpoint..."
-          curl -f https://${{ secrets.DOMAIN_NAME }}/health || echo "Warning: Health check failed (may need time for SSL)"
+          echo "Testing application..."
+          curl -f -k https://${{ secrets.DOMAIN_NAME }}/ || echo "Warning: Main page check failed (may need time for SSL)"
+
+          echo ""
+          echo "=== Deployment Complete ==="
+          echo "Application URL: https://${{ secrets.DOMAIN_NAME }}"
+          echo "Admin Registration: Click 'Register as Admin' and use ADMIN_REGISTRATION_SECRET"
 
       - name: Cleanup
         if: always()

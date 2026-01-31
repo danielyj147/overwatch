@@ -53,11 +53,15 @@ cloudflare_api_token = "your-cloudflare-api-token"
 ssh_public_key = "ssh-ed25519 AAAAC3... your-email"
 db_password = "$(openssl rand -base64 32)"
 hocuspocus_jwt_secret = "$(openssl rand -hex 32)"
+admin_registration_secret = "$(openssl rand -base64 32)"
 ```
 
 **Generate secure passwords:**
 ```bash
 # Database password
+openssl rand -base64 32
+
+# Admin registration secret
 openssl rand -base64 32
 
 # Hocuspocus JWT secret

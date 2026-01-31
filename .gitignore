@@ -68,8 +68,8 @@ terraform/*.tfplan
 
 # Backups
 backups/
-*.sql
-*.sql.gz
+backups/*.sql
+backups/*.sql.gz
 
 # Deployment outputs
 terraform-outputs.txt

@@ -87,6 +87,27 @@ export function AuthScreen() {
             </h2>
           </div>
 
+          {mode === 'login' && (
+            <div
+              className="mb-4 p-3 rounded-lg text-sm"
+              style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              <p className="font-medium mb-1" style={{ color: 'var(--color-accent)' }}>
+                Demo Credentials:
+              </p>
+              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                Email: test2@overwatch.danielyj.com
+              </p>
+              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                Password: testtest
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {(mode === 'signup' || mode === 'admin') && (
               <div>

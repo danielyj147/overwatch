@@ -2,6 +2,12 @@
 
 **Built by Daniel Jeong**
 
+**Live Demo:** https://overwatch.danielyj.com
+
+Login with:
+> Email: test2@overwatch.danielyj.com  
+> Password: testtest
+
 A real-time collaborative Common Operational Picture (COP) platform. Think of it as "Google Docs for maps" — when one operative draws, marks, or annotates the map, every connected user sees the change instantly.
 
 ![Overwatch Screenshot 1](./assets/static/overwatch1.png)
@@ -388,7 +394,5 @@ MIT
 A production-ready real-time collaborative mapping platform for operational awareness and coordination.
 
 ---
-
-**Live Demo:** https://overwatch.danielyj.com
 
 **Source Code:** https://github.com/danielyj147/overwatch

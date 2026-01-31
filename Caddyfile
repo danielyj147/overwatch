@@ -4,42 +4,47 @@
 }
 
 {$DOMAIN_NAME} {
-    # Frontend static files
-    root * /usr/share/caddy
-    file_server
-    try_files {path} /index.html
-
-    # API endpoints (auth, etc.)
-    handle /api/* {
-        reverse_proxy hocuspocus:1235 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
+    # Use route to enforce explicit ordering
+    route {
+        # API endpoints (auth, etc.) - MUST come before file_server
+        handle /api/* {
+            reverse_proxy hocuspocus:1235 {
+                header_up Host {host}
+                header_up X-Real-IP {remote}
+                header_up X-Forwarded-For {remote}
+                header_up X-Forwarded-Proto {scheme}
+            }
         }
-    }
 
-    # WebSocket for Hocuspocus
-    handle /ws* {
-        reverse_proxy hocuspocus:1234 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
+        # WebSocket for Hocuspocus
+        handle /ws* {
+            reverse_proxy hocuspocus:1234 {
+                header_up Host {host}
+                header_up X-Real-IP {remote}
+                header_up X-Forwarded-For {remote}
+                header_up X-Forwarded-Proto {scheme}
+            }
         }
-    }
 
-    # Vector tiles from Martin
-    handle /tiles/* {
-        reverse_proxy martin:3000 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
+        # Vector tiles from Martin
+        handle /tiles/* {
+            reverse_proxy martin:3000 {
+                header_up Host {host}
+                header_up X-Real-IP {remote}
+            }
         }
-    }
 
-    # Health check endpoint
-    handle /health {
-        respond "OK" 200
+        # Health check endpoint
+        handle /health {
+            respond "OK" 200
+        }
+
+        # Frontend static files - MUST come last as fallback
+        handle {
+            root * /usr/share/caddy
+            try_files {path} /index.html
+            file_server
+        }
     }
 
     # Enable compression

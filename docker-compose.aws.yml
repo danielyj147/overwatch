@@ -113,7 +113,7 @@ services:
     platform: linux/amd64
     container_name: overwatch-martin
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: ${DATABASE_URL}
       MARTIN_CACHE_SIZE_MB: 64
     volumes:
       - ./martin/config.yaml:/config.yaml:ro
@@ -145,12 +145,12 @@ services:
       dockerfile: Dockerfile
     container_name: overwatch-hocuspocus
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       HOCUSPOCUS_SECRET: ${HOCUSPOCUS_SECRET}
       ADMIN_REGISTRATION_SECRET: ${ADMIN_REGISTRATION_SECRET}
-      HOCUSPOCUS_PORT: 1234
-      HOCUSPOCUS_HTTP_PORT: 1235
+      PORT: 1234
+      HTTP_PORT: 1235
       NODE_ENV: production
       # Node.js memory limit
       NODE_OPTIONS: "--max-old-space-size=200"

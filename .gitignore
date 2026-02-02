@@ -2,6 +2,9 @@
 node_modules/
 .pnpm-store/
 
+# archive
+archives/*
+
 # Environment files
 .env
 .env.local
